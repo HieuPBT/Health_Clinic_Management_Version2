@@ -40,18 +40,30 @@ export const getTodayPrescriptions = async (req, res) => {
         const today = moment().tz(TIMEZONE).startOf('day');
         const tomorrow = moment(today).add(1, 'days');
 
-        const prescriptions = await Prescription.find().populate({
-            path: 'appointment',
-            match: {
-                bookingDate: {
-                    $gte: today.toDate(),
-                    $lt: tomorrow.toDate()
-                },
-                status: "CHƯA THANH TOÁN"
+        const result = await Prescription.aggregate([
+            {
+                $lookup: {
+                    from: 'appointments',
+                    localField: 'appointment',
+                    foreignField: '_id',
+                    as: 'appointmentData'
+                }
+            },
+            {
+                $unwind: '$appointmentData'
+            },
+            {
+                $match: {
+                    'appointmentData.bookingDate': {
+                        $gte: today.toDate(),
+                        $lt: tomorrow.toDate()
+                    },
+                    'appointmentData.status': "CHƯA THANH TOÁN"
+                }
             }
-        });
+        ]);
 
-        res.json(prescriptions);
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });

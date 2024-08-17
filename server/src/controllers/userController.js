@@ -1,17 +1,27 @@
 import User from "../models/User.js";
+import Patient from "../models/Patient.js";
 import cloudinary from "../config/cloudinary.js";
-
 
 export const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password');
-        console.log(req.user)
-        if (req.user.id !== user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Forbidden' });
-        }
+        let user = await User.findById(req.params.id || req.user.id).select('-password -tokens');
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
+        if (req.user.id !== user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        if (user.role === 'patient') {
+            const patient = await Patient.findOne({ user: user._id });
+            if (patient) {
+                user = user.toObject();
+                user.healthInsurance = patient.healthInsurance;
+            }
+        }
+
         res.status(200).json(user);
     } catch (err) {
         console.error('Error in getUserProfile:', err);
@@ -44,6 +54,10 @@ export const deleteUser = async (req, res) => {
             await deleteAvatarFromCloudinary(publicId);
         }
 
+        if (user.role === 'patient') {
+            await Patient.findOneAndDelete({ user: user._id });
+        }
+
         await User.findByIdAndDelete(req.params.id);
 
         res.status(200).json({ message: 'User deleted successfully' });
@@ -55,11 +69,7 @@ export const deleteUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
     try {
-        if (req.user.id !== req.params.id) {
-            return res.status(403).json({ message: 'Access denied!' });
-        }
-
-        let user = await User.findById(req.params.id);
+        let user = await User.findById(req.user.id);
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -84,14 +94,24 @@ export const updateUser = async (req, res) => {
             updateData.avatar = result.secure_url;
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
+        let updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
             {
                 $set: updateData
             },
             { new: true, runValidators: true }
-        ).select('-password');
-
+        ).select('-password -tokens');
+        updatedUser = updatedUser.toObject();
+        if (user.role === 'patient' && req.body.healthInsurance) {
+            let patient = await Patient.findOne({ user: user._id });
+            if (!patient) {
+                patient = new Patient({ user: user._id, healthInsurance: req.body.healthInsurance });
+            } else {
+                patient.healthInsurance = req.body.healthInsurance;
+            }
+            await patient.save();
+            updatedUser.healthInsurance = patient.healthInsurance;
+        }
         res.status(200).json(updatedUser);
     } catch (err) {
         console.error('Error in updateUser:', err);

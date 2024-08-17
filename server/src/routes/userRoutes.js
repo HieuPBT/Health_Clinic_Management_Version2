@@ -6,7 +6,8 @@ const router = express.Router();
 
 
 router.get('/:id/profile', authenticateToken, getUserProfile);
-router.put('/:id/update', authenticateToken, upload.single('avatar'), updateUser);
+router.get('/profile', authenticateToken, getUserProfile);
+router.put('/profile', authenticateToken, upload.single('avatar'), updateUser);
 router.delete('/:id', authenticateToken, deleteUser);
 
 export default router;

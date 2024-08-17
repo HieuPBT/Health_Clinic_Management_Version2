@@ -1,6 +1,7 @@
 import express from 'express';
 import connectDB from './config/connectDB.js';
 import morgan from 'morgan'
+import cors from 'cors'
 import authRoutes from './routes/authRoutes.js'
 import userRoutes from './routes/userRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
@@ -27,6 +28,13 @@ app.use(session({
         maxAge: 3600000
     }
 }))
+
+//CORS
+const corsOptions = {
+    origin: process.env.FRONTEND_URL,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 app.use(adminJs.options.rootPath, router)
 
