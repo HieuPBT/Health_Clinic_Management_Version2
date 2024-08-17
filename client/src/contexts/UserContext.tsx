@@ -14,7 +14,7 @@ interface UserContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
-  fetchUser: () => void;
+  fetchUser: () => any;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -40,11 +40,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         console.log(userData)
         setUser(userData);
+        return userData;
       } catch (error) {
         console.error('Failed to fetch user:', error);
         logout();
       }
     }
+    return null;
   };
 
   useEffect(() => {

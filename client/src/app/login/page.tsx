@@ -10,41 +10,46 @@ import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/components/ui/use-toast"
 import axiosInstance from "@/lib/axios"
 import { useUser } from "@/contexts/UserContext"
+import ChatboxList from "@/components/ChatboxList"
+import { handleLoginFirebase } from "@/lib/firebase"
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
-    const router = useRouter()
-    const { toast } = useToast()
-    const { fetchUser } = useUser()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+  const { fetchUser } = useUser()
 
-    async function onSubmit(event: React.FormEvent) {
-      event.preventDefault()
-      setIsLoading(true)
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setIsLoading(true)
 
-      try {
-        const response = await axiosInstance.post("/auth/login", { email, password })
-        localStorage.setItem("token", response.data.token)
-        await fetchUser()
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        })
-        router.push("/")
-      } catch (error) {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
-      }
+    try {
+      const response = await axiosInstance.post("/auth/login", { email, password })
+      localStorage.setItem("token", response.data.token)
+      const user = await fetchUser()
+      toast({
+        title: "Đăng nhập thành công!",
+        description: "Chào mừng trở lại!",
+      })
+
+      handleLoginFirebase(email, password, user?.avatar || "", user?.fullName || "");
+      router.push("/")
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
+      <ChatboxList />
       <Card className="w-[350px]">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Login</CardTitle>

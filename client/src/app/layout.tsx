@@ -10,8 +10,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Your App Name",
-  description: "Description of your app",
+  title: "Lộc Hiếu Health Clinic",
+  description: "Trang web đặt lịch khám trực tuyến",
 }
 
 export default function RootLayout({
@@ -19,6 +19,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -35,7 +36,6 @@ export default function RootLayout({
               <Footer />
             </UserProvider>
           </div>
-
           <Toaster />
         </ThemeProvider>
       </body>

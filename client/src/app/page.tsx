@@ -1,3 +1,4 @@
+import ChatboxList from "@/components/ChatboxList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
@@ -5,6 +6,7 @@ import { ChevronRight } from "lucide-react"
 export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-12">
+      <ChatboxList />
       <h1 className="text-4xl font-bold mb-8 text-center">Welcome to Our Next.js App</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
