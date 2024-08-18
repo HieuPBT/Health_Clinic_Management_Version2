@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+export const endpoints = {
+  'patient-appointments': "/appointment/patient-appointments/",
+  'search-medicines': "/medicine",
+  'create-prescription': "/prescription/",
+  'create-invoice': '/prescription/today/'
+}
+
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:8888/api',
 });

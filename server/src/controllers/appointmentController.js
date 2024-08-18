@@ -47,6 +47,33 @@ export const getUserAppointments = async (req, res) => {
     }
 }
 
+export const getPatientAppointments = async(req, res) => {
+    try{
+        let query
+        if(req.user.role == 'nurse'){
+            query = {status: "CHƯA XÁC NHẬN"}
+        }
+        else {
+            query = {status: "ĐÃ XÁC NHẬN"}
+        }
+        const options = {
+            page: req.query.page,
+            baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
+            sortBy: { bookingDate: -1 }
+        };
+
+        const result = await appointmentPaginator(query, options);
+
+        await Appointment.populate(result.results, {path: 'patient department', select: 'email fullName name'});
+
+        res.json(result);
+
+    }catch(error){
+        console.error('Error fetching appointments:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 export const confirmAppointment = async (req, res) => {
     try {
         const appointmentId = req.params.id;

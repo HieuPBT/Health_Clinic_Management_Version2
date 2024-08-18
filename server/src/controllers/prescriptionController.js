@@ -2,8 +2,11 @@ import Prescription from '../models/Prescription.js';
 import Appointment from '../models/Appointment.js';
 import User from '../models/User.js';
 import moment from "moment-timezone"
+import createPaginator from '../utils/paginator.js';
 
 const TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+const prescriptionPaginator = createPaginator(Prescription);
 
 export const createPrescription = async (req, res) => {
     try {
@@ -40,28 +43,41 @@ export const getTodayPrescriptions = async (req, res) => {
         const today = moment().tz(TIMEZONE).startOf('day');
         const tomorrow = moment(today).add(1, 'days');
 
-        const result = await Prescription.aggregate([
+        const pipeline = [
             {
                 $lookup: {
                     from: 'appointments',
                     localField: 'appointment',
                     foreignField: '_id',
-                    as: 'appointmentData'
+                    as: 'appointment'
                 }
             },
             {
-                $unwind: '$appointmentData'
+                $unwind: '$appointment'
             },
             {
                 $match: {
-                    'appointmentData.bookingDate': {
+                    'appointment.bookingDate': {
                         $gte: today.toDate(),
                         $lt: tomorrow.toDate()
                     },
-                    'appointmentData.status': "CHƯA THANH TOÁN"
+                    'appointment.status': "CHƯA THANH TOÁN"
                 }
             }
-        ]);
+        ]
+
+        const options = {
+            page: req.query.page,
+            baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
+            sortBy: { 'appointment.bookingDate': -1 },
+        }
+
+        const result = await prescriptionPaginator(pipeline, options);
+
+        await Prescription.populate(result.results, {path: 'appointment',
+            populate: {
+                path: 'patient department', select: 'name fullName email'
+            }})
 
         res.json(result);
     } catch (error) {

@@ -5,6 +5,6 @@ import { getMedicines } from "../controllers/medicineController.js";
 
 const router = express.Router();
 
-router.get('/', authenticateToken, authorizeRole('doctor'), getMedicines);
+router.get('/', authenticateToken, authorizeRole(['doctor']), getMedicines);
 
 export default router;

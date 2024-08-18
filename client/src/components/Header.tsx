@@ -37,11 +37,10 @@ const Header = () => {
     const roleSpecificRoutes = {
         nurse: [
             { href: '/appointment', label: 'Lịch Hẹn', icon: Calendar },
-            { href: '/create-invoice', label: 'Thanh Toán', icon: FileText },
+            { href: '/invoice', label: 'Thanh Toán', icon: FileText },
         ],
         doctor: [
             { href: '/appointment', label: 'Lịch hẹn', icon: Calendar },
-            { href: '/prescription', label: 'Kê Toa', icon: FileText },
             { href: '/patient', label: 'Hồ sơ bệnh án', icon: Users },
         ],
         patient: [
