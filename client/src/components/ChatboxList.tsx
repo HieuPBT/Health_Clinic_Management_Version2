@@ -11,7 +11,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useUser } from '@/contexts/UserContext';
-import { chatListener, getAssistantList, getChattingUserData, getMyChattingUser, getUserInfoByEmail, listenNewNotifications, listenToAllChats, readMessage, startChat } from '@/lib/firebase';
+import { chatListener, getChattingUserData, getMyChattingUser, getUserInfoByEmail, listenNewNotifications, listenToAllChats, readMessage, startChat } from '@/lib/firebase';
 import moment from 'moment';
 import Chatbox from '@/components/Chatbox';
 import { MessageCircle, Search } from 'lucide-react';

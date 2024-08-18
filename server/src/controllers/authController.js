@@ -7,6 +7,7 @@ import { generateAccessToken, generateVerificationToken } from '../utils/tokenGe
 import Patient from '../models/Patient.js'
 import getVerificationTemplate from '../emailTemplates/verificationTemplate.js'
 import generatePassword from '../utils/generatePassword.js'
+import { handleRegisterFirebase } from '../utils/firebase.js'
 
 export const register = async (req, res) => {
     console.log(req.body)
@@ -62,6 +63,8 @@ export const register = async (req, res) => {
 
         await sendVerificationEmail(user.email, verificationLink);
 
+
+        await handleRegisterFirebase(user.email, password, fullName, avatarUrl);
         const payload = {
             user: {
                 id: user.id,
