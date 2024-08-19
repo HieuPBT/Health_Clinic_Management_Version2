@@ -6,6 +6,7 @@
 [database](#database)
 
 [setup](#how-to-setup)
+
 [docs](#docs)
 
 ## Database
