@@ -40,7 +40,7 @@ export default function Invoice() {
                         <AppointmentCard
                             key={p._id}
                             _id={p._id}
-                            patient={p.appointment.patient}
+                            patient={p.patient}
                             bookingDate={p.appointment.bookingDate}
                             bookingTime={p.appointment.bookingTime}
                             department={p.appointment.department}

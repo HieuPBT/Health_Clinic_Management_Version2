@@ -6,7 +6,7 @@ const createPaginator = (model) => {
     const limit = parseInt(options.limit) || defaultPageSize;
     const skip = (page - 1) * limit;
     const sortBy = options.sortBy || { createdAt: -1 };
-    
+
     let isPipeline = Array.isArray(queryOrPipeline);
     let countPromise, docsPromise;
 
@@ -23,11 +23,11 @@ const createPaginator = (model) => {
       const countPipeline = [...queryOrPipeline, { $count: 'totalDocs' }];
       const [countResult] = await model.aggregate(countPipeline);
       const totalDocs = countResult ? countResult.totalDocs : 0;
-      
+
       // Fetch documents with pagination
       docsPromise = model.aggregate(pipeline).exec();
       countPromise = Promise.resolve(totalDocs);
-      
+
     } else {
       // Standard query (non-pipeline)
       countPromise = model.countDocuments(queryOrPipeline);

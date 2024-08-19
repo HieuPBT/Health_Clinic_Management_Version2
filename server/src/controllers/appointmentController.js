@@ -39,6 +39,7 @@ export const getUserAppointments = async (req, res) => {
         };
 
         const result = await appointmentPaginator(query, options);
+        await Appointment.populate(result.results, {path: 'department', select: 'name'});
 
         res.json(result);
     } catch (error) {

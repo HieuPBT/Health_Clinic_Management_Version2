@@ -4,7 +4,8 @@ export const endpoints = {
   'patient-appointments': "/appointment/patient-appointments/",
   'search-medicines': "/medicine",
   'create-prescription': "/prescription/",
-  'create-invoice': '/prescription/today/'
+  'create-invoice': '/prescription/today/',
+  'my-appointment': '/appointment/'
 }
 
 const axiosInstance = axios.create({
