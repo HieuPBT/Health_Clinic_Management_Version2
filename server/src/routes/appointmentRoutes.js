@@ -10,7 +10,7 @@ router.get('/patient-appointments', authenticateToken, authorizeRole(['nurse', '
 router.patch('/:id/confirm', authenticateToken, authorizeRole(['nurse']), confirmAppointment);
 router.post('/:id/reject', authenticateToken, authorizeRole(['nurse']), rejectAppointment);
 router.patch('/:id/cancel', authenticateToken, cancelAppointment);
+router.get('/appointment-counts', authenticateToken, getNext30DaysAppointmentsCount);
 router.get('/available-booking-times', authenticateToken, getAvailableBookingTimes);
-router.get('/appointment-counts', authenticateToken, getNext30DaysAppointmentsCount)
 
 export default router;

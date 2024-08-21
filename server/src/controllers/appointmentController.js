@@ -187,44 +187,6 @@ export const cancelAppointment = async (req, res) => {
     }
 };
 
-export const getAvailableBookingTimes = async (req, res) => {
-    const { date, department } = req.query;
-
-    if (!date || !department) {
-        return res.status(400).json({ error: 'Date and department are required' });
-    }
-
-    try {
-        const parsedDate = moment.tz(date, 'YYYY-MM-DD', TIMEZONE);
-        if (!parsedDate.isValid()) {
-            return res.status(400).json({ error: 'Invalid date format. Please use YYYY-MM-DD' });
-        }
-
-        const startDate = parsedDate.startOf('day').toDate();
-        const endDate = parsedDate.add(1, 'day').startOf('day').toDate();
-
-        const bookedAppointments = await Appointment.find({
-            bookingDate: {
-                $gte: startDate,
-                $lt: endDate
-            },
-            department,
-            status: { $ne: 'ĐÃ HUỶ' }
-        }).select('bookingTime -_id');
-
-
-        const bookedTimes = bookedAppointments.map(app => {
-            const [hours, minutes] = app.bookingTime.split(':');
-            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-        });
-        const availableTimes = ALLOWED_BOOKING_TIMES.filter(time => !bookedTimes.includes(time));
-        res.json(availableTimes);
-    } catch (error) {
-        console.error('Error in getAvailableBookingTimes:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-}
-
 export const getNext30DaysAppointmentsCount = async (req, res) => {
     try {
         const tomorrow = moment().tz(TIMEZONE).startOf('day').add(1, 'days');
@@ -269,5 +231,43 @@ export const getNext30DaysAppointmentsCount = async (req, res) => {
     } catch (error) {
         console.error('Error fetching appointment counts:', error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+export const getAvailableBookingTimes = async (req, res) => {
+    const { date, department } = req.query;
+
+    if (!date || !department) {
+        return res.status(400).json({ error: 'Date and department are required' });
+    }
+
+    try {
+        const parsedDate = moment.tz(date, 'YYYY-MM-DD', TIMEZONE);
+        if (!parsedDate.isValid()) {
+            return res.status(400).json({ error: 'Invalid date format. Please use YYYY-MM-DD' });
+        }
+
+        const startDate = parsedDate.startOf('day').toDate();
+        const endDate = parsedDate.add(1, 'day').startOf('day').toDate();
+
+        const bookedAppointments = await Appointment.find({
+            bookingDate: {
+                $gte: startDate,
+                $lt: endDate
+            },
+            department,
+            status: { $ne: 'ĐÃ HUỶ' }
+        }).select('bookingTime -_id');
+
+
+        const bookedTimes = bookedAppointments.map(app => {
+            const [hours, minutes] = app.bookingTime.split(':');
+            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        });
+        const availableTimes = ALLOWED_BOOKING_TIMES.filter(time => !bookedTimes.includes(time));
+        res.json(availableTimes);
+    } catch (error) {
+        console.error('Error in getAvailableBookingTimes:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 }
