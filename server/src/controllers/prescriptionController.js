@@ -86,6 +86,33 @@ export const getTodayPrescriptions = async (req, res) => {
     }
 };
 
+export const createInvoice = async (req, res) => {
+    try {
+        const { prescriptionId } = req.params;
+        const nurse = req.user._id;
+
+        const prescription = await Prescription.findById(prescriptionId);
+        if (!prescription) {
+            return res.status(404).json({ message: 'Prescription not found' });
+        }
+
+        const newInvoice = new Invoice({
+            nurse,
+            prescription: prescriptionId,
+            ...req.body
+        });
+
+        await newInvoice.save();
+
+        // Update appointment status
+        await Appointment.findByIdAndUpdate(prescription.appointment, { status: 'ĐÃ THANH TOÁN' });
+
+        res.status(201).json(newInvoice);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 export const getPatientPrescriptions = async (req, res) => {
     try {
         const { email, start_date, end_date } = req.query;
@@ -112,32 +139,5 @@ export const getPatientPrescriptions = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
-    }
-};
-
-export const createInvoice = async (req, res) => {
-    try {
-        const { prescriptionId } = req.params;
-        const nurse = req.user._id;
-
-        const prescription = await Prescription.findById(prescriptionId);
-        if (!prescription) {
-            return res.status(404).json({ message: 'Prescription not found' });
-        }
-
-        const newInvoice = new Invoice({
-            nurse,
-            prescription: prescriptionId,
-            ...req.body
-        });
-
-        await newInvoice.save();
-
-        // Update appointment status
-        await Appointment.findByIdAndUpdate(prescription.appointment, { status: 'ĐÃ THANH TOÁN' });
-
-        res.status(201).json(newInvoice);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
     }
 };
