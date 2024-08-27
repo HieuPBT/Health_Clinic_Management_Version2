@@ -3,19 +3,24 @@ import { useUser } from "@/contexts/UserContext"
 import axiosInstance, { endpoints } from "@/lib/axios";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
-import AppointmentCard, { AppointmentCardProps } from "@/components/AppointmentCard";
+import AppointmentCard from "@/components/AppointmentCard";
 import { useRouter } from "next/navigation";
-
+import { Prescription } from "@/components/interface/PrescriptionInterface";
+// import InvoiceDialog from "@/components/dialog/InvoiceDialog";
 
 export default function Invoice() {
     const { user } = useUser();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [prescriptions, setPrescriptions] = useState([]);
+    const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
     const loadPrescriptions = async () => {
-        const res = await axiosInstance.get(endpoints['create-invoice'])
+        const res = await axiosInstance.get(endpoints['patient-invoices'])
         setPrescriptions(res.data.results)
         console.log(res.data.results);
+    }
+
+    const removePrescription = (prescriptionsId: string) => {
+        setPrescriptions(prevrescriptions=> prevrescriptions.filter(prescription => prescription._id !== prescriptionsId));
     }
 
     useEffect(() => {
@@ -36,19 +41,21 @@ export default function Invoice() {
                 </div>
             </div>) : (
                 <div className="flex flex-row items-center">
-                    {prescriptions.map((p: AppointmentCardProps, index) => (
+                    {prescriptions.map((p, index) => (
                         <AppointmentCard
                             key={p._id}
                             _id={p._id}
-                            patient={p.patient}
+                            patient={p.appointment.patient}
                             bookingDate={p.appointment.bookingDate}
                             bookingTime={p.appointment.bookingTime}
                             department={p.appointment.department}
                             status={p.appointment.status}
-                            btn={user?.role == 'nurse' ? { bt1: '', bt2: 'Thanh Toán' } : { bt1: '', bt2: 'Kê Toa' }}
+                            btn={user?.role == 'nurse' ? { bt1: 'Xuất PDF', bt2: 'Thanh Toán' } : { bt1: '', bt2: 'Kê Toa' }}
+                            onConfirm={removePrescription}
                         />
 
                     ))}
+                    {/* <InvoiceDialog/> */}
                 </div>
             )
             }

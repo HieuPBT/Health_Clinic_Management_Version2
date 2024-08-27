@@ -4,8 +4,11 @@ export const endpoints = {
   'patient-appointments': "/appointment/patient-appointments/",
   'search-medicines': "/medicine",
   'create-prescription': "/prescription/",
-  'create-invoice': '/prescription/today/',
+  'patient-invoices': '/prescription/today/',
+  'create-invoice': (prescriptionId: string) => `/prescription/${prescriptionId}/invoice`,
   'my-appointment': '/appointment/',
+  'confirm-appointment': (appointmentId: string) =>`/appointment/${appointmentId}/confirm/`,
+  'reject-appointment': (appointmentId: string) => `/appointment/${appointmentId}/reject`,
   'register': '/auth/register/'
 }
 

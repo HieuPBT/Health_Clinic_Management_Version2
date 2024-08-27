@@ -3,58 +3,93 @@ import { useUser } from "@/contexts/UserContext"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState } from "react"
-import axios from "axios"
 import axiosInstance, { endpoints } from "@/lib/axios"
 import AppointmentCard from "@/components/AppointmentCard"
-import { AppointmentCardProps } from "@/components/AppointmentCard"
+import Paginator from "@/components/Pagination"
+import { AppointmentInterface } from "@/components/interface/AppointmentInterface"
 
-export default function Appoinment() {
+export default function Appointment() {
     const { user } = useUser()
     const router = useRouter()
     const [loading, setLoading] = useState(true);
-    const [appointments, setAppointments] = useState([]);
-    const loadAppointments = async () => {
-        const res = await axiosInstance.get(endpoints['patient-appointments'])
+    const [appointments, setAppointments] = useState<AppointmentInterface[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-        setAppointments(res.data.results);
-    }
-    useEffect(() => {
-        if (user?.role == 'patient')
-            router.push("/")
-        else {
+    const loadAppointments = async (currentPg: number) => {
+        try {
+            const res = await axiosInstance.get(endpoints['patient-appointments'], {
+                params: {
+                    page: currentPg || 0,
+                }
+            });
+            setAppointments(res.data.results);
+            setTotalPages(res.data.totalPages);
             setLoading(false);
-            loadAppointments();
+        } catch (error) {
+            console.error("Error loading appointments:", error);
+            setLoading(false);
         }
+    }
 
-    }, [user, router])
+    useEffect(() => {
+        if (!user || user.role === 'patient') {
+            router.push("/");
+        } else {
+            loadAppointments(currentPage);
+        }
+    }, [user, router]);
 
-    return (
-        <>
-            {loading ? (<div className="flex items-center space-x-4">
+    const pageChange = (page: number) => {
+        setCurrentPage(page)
+        loadAppointments(page)
+    }
+
+    const removeAppointment = (appointmentId: string) => {
+        setAppointments(prevAppointments => prevAppointments.filter(appointment => appointment._id !== appointmentId));
+    }
+
+    if (loading) {
+        return (
+            <div className="flex items-center space-x-4">
                 <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-[250px]" />
                     <Skeleton className="h-4 w-[200px]" />
                 </div>
-            </div>) : (
-                <div className="flex flex-row items-center">
-                    {appointments.map((appointment: AppointmentCardProps, index) => (
-                        <AppointmentCard
-                            key={appointment._id}
-                            _id={appointment._id}
-                            patient={appointment.patient}
-                            bookingDate={appointment.bookingDate}
-                            bookingTime={appointment.bookingTime}
-                            department={appointment.department}
-                            status={appointment.status}
-                            btn={user?.role == 'nurse' ? { bt1: 'Từ Chối', bt2: 'Xác Nhận' } : { bt1: '', bt2: 'Kê Toa' }}
-                        />
-                        
-                    ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-4">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {appointments.map((appointment) => (
+                    <AppointmentCard
+                        key={appointment._id}
+                        {...appointment}
+                        btn={
+                            user?.role === 'nurse'
+                                ? { bt1: 'Từ Chối', bt2: 'Xác Nhận' }
+                                : { bt1: '', bt2: 'Kê Toa' }
+                        }
+                        onConfirm={removeAppointment}
+                    />
+                ))}
+            </div>
+            {appointments.length > 0 ? ( 
+                <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange} />
+            ): (
+                <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
                 </div>
+            </div>
             )
             }
-        </>
 
-    )
+        </div>
+    );
 }
