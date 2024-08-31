@@ -9,7 +9,9 @@ export const endpoints = {
   'my-appointment': '/appointment/',
   'confirm-appointment': (appointmentId: string) =>`/appointment/${appointmentId}/confirm/`,
   'reject-appointment': (appointmentId: string) => `/appointment/${appointmentId}/reject`,
-  'register': '/auth/register/'
+  'register': '/auth/register/',
+  'create-momo': "/payment/create-momo",
+  'create-zalopay': "/payment/create-zalopay",
 }
 
 const axiosInstance = axios.create({

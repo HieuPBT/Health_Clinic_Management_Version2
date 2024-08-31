@@ -8,6 +8,7 @@ import { SquareUserRound, Clock, CalendarDays, Mail } from 'lucide-react';
 import PrescriptionDialog from './PrescriptionDialog';
 import axiosInstance, { endpoints } from '@/lib/axios';
 import { useToast } from './ui/use-toast';
+import { InvoiceDialog } from './dialog/InvoiceDialog';
 
 export interface AppointmentCardProps {
     _id: string;
@@ -102,12 +103,16 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ _id, patient, booking
                     <Button variant="destructive" onClick={() => rejectAppointment(_id)}>{btn.bt1}</Button>
                 )}
                 {btn.bt2 && (
-                    <Button variant="default" onClick={() => btn.bt2 === 'Xác Nhận'? confirmAppointment(_id):setDialogOpen(true)}>{btn.bt2}</Button>
+                    <Button variant="default" onClick={() => btn.bt2 === 'Xác Nhận'? confirmAppointment(_id): setDialogOpen(true)}>{btn.bt2}</Button>
                 )}
             </CardFooter>
-            <PrescriptionDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} id={_id} onRemove={onConfirm}/>
+            {btn.bt2 === 'Kê Toa'? (
+                <PrescriptionDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} id={_id} onRemove={onConfirm}/>
+            ):(
+                <InvoiceDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} onRemove={onConfirm} prescriptionId={_id}/>
+            )}
         </Card>
-    )
+    );
 }
 
 export default AppointmentCard;

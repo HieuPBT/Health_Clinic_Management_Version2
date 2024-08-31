@@ -2,24 +2,32 @@ import axios from "axios";
 import crypto from "crypto";
 import { baseUrls, endpoints } from "../utils/API.js";
 import moment from "moment";
+import Invoice from "../models/Invoice.js";
+import Appointment from "../models/Appointment.js";
+import Prescription from "../models/Prescription.js";
+
+var accessKey = process.env.MOMO_ACCESS_KEY;
+var secretkey = process.env.MOMO_SECRET_KEY;
+var partnerCode = "MOMO";
+
 
 export const createMoMo = async (req, res) => {
     const {
+        orderInfo,
         amount,
         redirectUrl,
-        ipnUrl
+        ipnUrl,
+        autoCapture,
+        lang,
     } = req.body;
     var partnerCode = "MOMO";
-    var accessKey = process.env.MOMO_ACCESS_KEY;
-    var secretkey = process.env.MOMO_SECRET_KEY;
     var requestId = partnerCode + "_" + new Date().getTime();
     var orderId = requestId;
-    var orderInfo = "Thanh toán với MoMo";
+    // var orderInfo = "Thanh toán với MoMo";
     var requestType = "captureWallet";
     var extraData = "";
-
+    
     var rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
-
     var signature = crypto.createHmac('sha256', secretkey).update(rawSignature).digest('hex');
 
     try {
@@ -35,8 +43,10 @@ export const createMoMo = async (req, res) => {
             extraData: extraData,
             requestType: requestType,
             signature: signature,
-            lang: 'en'
+            lang: lang,
+            autoCapture: autoCapture
         });
+
 
         const result = await axios.post(
             `${baseUrls.momo}${endpoints['create-momo']}`,
@@ -58,15 +68,164 @@ export const createMoMo = async (req, res) => {
 export const ipnMoMo = async (req, res) =>{
     const {
         message,
-        resultCode
+        resultCode,
+        orderId,
     } = req.body
-
+    console.log(req.body);
     if(resultCode === 0){
+        try{
+
+            const invoice = await Invoice.findOneAndUpdate(
+                { orderId: orderId },
+                { paymentStatus: 'COMPLETED'},
+                { new: true }
+            );
+
+            if(invoice){
+                const pres = await Prescription.findById(
+                    invoice.prescription
+                );
+
+                if(pres){
+                    await Appointment.findByIdAndUpdate(
+                        pres.appointment,
+                        { status: 'ĐÃ THANH TOÁN' }
+                    );
+                }
+            }
+        } catch(error){
+            console.error("Lỗi cập nhật trạng thái", error);
+        }
         console.log("Thành công")
     }
     else console.log("Thất bại")
 
     res.json({"resultCode" : resultCode, "message": message});
+}
+
+export const queryMoMo = async (req, res) => {
+    const {
+        orderId
+    } = req.body
+    var partnerCode = "MOMO";
+    var requestId = partnerCode + "_" + new Date().getTime();
+    var secretkey = process.env.MOMO_SECRET_KEY;
+    var accessKey = process.env.MOMO_ACCESS_KEY;
+
+    var rawData = `accessKey=${accessKey}&orderId=${orderId}&partnerCode=${partnerCode}&requestId=${requestId}`;
+
+    var signature = crypto.createHmac('sha256', secretkey).update(rawData).digest('hex');
+
+    try{
+        const requestBody = JSON.stringify({
+            partnerCode: partnerCode,
+            requestId: requestId,
+            orderId: orderId,
+            lang: "en",
+            signature: signature,
+        });
+        console.log(requestBody);
+
+        const result = await axios.post(`${baseUrls.momo}${endpoints['query-momo']}`, requestBody,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+        console.log(result);
+        res.json(result.data);
+
+    }catch(error){
+        console.error(error);
+        res.status(500).json({ error: 'Lỗi!,không thể tra cứu trạng thái với MoMo' });
+    }
+}
+
+export const confirmMoMo = async(req, res) =>{
+    const {
+        orderId,
+        requestType,
+        amount,
+        description,
+    } = req.body;
+    
+    var requestId = partnerCode + "_" + new Date().getTime();
+    
+    
+    var rawData = `accessKey=${accessKey}&amount=${amount}&description=${description}&orderId=${orderId}&partnerCode=${partnerCode}&requestId=${requestId}&requestType=${requestType}`;
+    
+
+    var signature = crypto.createHmac('sha256', secretkey).update(rawData).digest('hex');
+
+    try{
+        const requestBody = JSON.stringify({
+            partnerCode: partnerCode,
+            requestId: requestId,
+            orderId: orderId,
+            requestType: requestType,
+            amount: amount,
+            lang: 'en',
+            description: description,
+            signature: signature,
+        })
+
+        console.log(requestBody);
+
+        const result = await axios.post(`${baseUrls.momo}${endpoints['confirm-momo']}`, requestBody,
+            {
+            headers:{
+                'Content-Type': 'application/json',
+            }
+        });
+        // console.log(rawData);
+        res.json(result.data);
+    }catch(error){
+        console.error(error);
+        res.status(500).json({error: "Lỗi xác nhận momo", data: error.data});
+
+    }
+}
+
+export const refundMoMo = async (req, res) =>{
+    const {
+        amount,
+        transId,
+        description,
+        lang
+    } = req.body;
+
+    var requestId = partnerCode + "_" + new Date().getTime();
+
+    var rawSignature = `accessKey=${accessKey}&amount=${amount}&description=${description}&orderId=${orderId}&partnerCode=${partnerCode}&requestId=${requestId}&transId=${transId}`;
+    var signature = crypto.createHmac('sha256', secretkey).update(rawSignature).digest('hex');
+
+    try{
+        const requestBody = JSON.stringify({
+            partnerCode: partnerCode,
+            orderId: requestId,
+            requestId: requestId,
+            amount: amount,
+            transId: transId,
+            lang: lang,
+            description: description,
+            signature: signature
+        })
+
+        const result = await axios.post(`${baseUrls.momo}${endpoints['refund-momo']}`, requestBody,
+            {
+                headers: {
+                    'Content-Type': "application/json"
+                }
+            }
+        )
+        console.log(result);
+        res.json(result.data);
+    }catch(error){
+        console.log(error);
+        res.status(500).json({error: "Lỗi hoàn tiền MoMo"});
+    }
+
 }
 
 export const createZaloPay = async (req, res) => {

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import AppointmentCard from "@/components/AppointmentCard";
 import { useRouter } from "next/navigation";
 import { Prescription } from "@/components/interface/PrescriptionInterface";
+import Paginator from "@/components/Pagination";
 // import InvoiceDialog from "@/components/dialog/InvoiceDialog";
 
 export default function Invoice() {
@@ -13,10 +14,26 @@ export default function Invoice() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-    const loadPrescriptions = async () => {
-        const res = await axiosInstance.get(endpoints['patient-invoices'])
-        setPrescriptions(res.data.results)
-        console.log(res.data.results);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const loadPrescriptions = async (currentPg: number) => {
+        try{
+            const res = await axiosInstance.get(endpoints['patient-invoices'], 
+                {
+                    params: {
+                        page: currentPg || 0,
+                    }
+                }
+            );
+            setPrescriptions(res.data.results)
+            setTotalPages(res.data.totalPages);
+            setLoading(false);
+        } catch(error){
+            console.error("Error loading today prescriptions", error);
+            
+        }
+        
+        // console.log(res.data.results);
     }
 
     const removePrescription = (prescriptionsId: string) => {
@@ -27,10 +44,15 @@ export default function Invoice() {
         if (user?.role == 'patient' || !user)
             router.push('/')
         else {
-            setLoading(false);
-            loadPrescriptions();
+            loadPrescriptions(currentPage);
         }
     }, [user, router])
+
+    const pageChange = (page: number) => {
+        setCurrentPage(page)
+        loadPrescriptions(page)
+    }
+
     return (
         <>
             {loading ? (<div className="flex items-center space-x-4">
@@ -40,7 +62,8 @@ export default function Invoice() {
                     <Skeleton className="h-4 w-[200px]" />
                 </div>
             </div>) : (
-                <div className="flex flex-row items-center">
+                <div className="p-4">
+                    <div className="flex flex-row items-center">
                     {prescriptions.map((p, index) => (
                         <AppointmentCard
                             key={p._id}
@@ -56,6 +79,10 @@ export default function Invoice() {
 
                     ))}
                     {/* <InvoiceDialog/> */}
+                    </div>
+                    {prescriptions.length > 0 && (
+                        <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange}/>
+                    )}
                 </div>
             )
             }
