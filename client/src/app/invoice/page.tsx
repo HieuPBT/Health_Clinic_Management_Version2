@@ -3,29 +3,56 @@ import { useUser } from "@/contexts/UserContext"
 import axiosInstance, { endpoints } from "@/lib/axios";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
-import AppointmentCard, { AppointmentCardProps } from "@/components/AppointmentCard";
+import AppointmentCard from "@/components/AppointmentCard";
 import { useRouter } from "next/navigation";
-
+import { Prescription } from "@/components/interface/PrescriptionInterface";
+import Paginator from "@/components/Pagination";
+// import InvoiceDialog from "@/components/dialog/InvoiceDialog";
 
 export default function Invoice() {
     const { user } = useUser();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [prescriptions, setPrescriptions] = useState([]);
-    const loadPrescriptions = async () => {
-        const res = await axiosInstance.get(endpoints['create-invoice'])
-        setPrescriptions(res.data.results)
-        console.log(res.data.results);
+    const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const loadPrescriptions = async (currentPg: number) => {
+        try{
+            const res = await axiosInstance.get(endpoints['patient-invoices'], 
+                {
+                    params: {
+                        page: currentPg || 0,
+                    }
+                }
+            );
+            setPrescriptions(res.data.results)
+            setTotalPages(res.data.totalPages);
+            setLoading(false);
+        } catch(error){
+            console.error("Error loading today prescriptions", error);
+            
+        }
+        
+        // console.log(res.data.results);
+    }
+
+    const removePrescription = (prescriptionsId: string) => {
+        setPrescriptions(prevrescriptions=> prevrescriptions.filter(prescription => prescription._id !== prescriptionsId));
     }
 
     useEffect(() => {
         if (user?.role == 'patient' || !user)
             router.push('/')
         else {
-            setLoading(false);
-            loadPrescriptions();
+            loadPrescriptions(currentPage);
         }
     }, [user, router])
+
+    const pageChange = (page: number) => {
+        setCurrentPage(page)
+        loadPrescriptions(page)
+    }
+
     return (
         <>
             {loading ? (<div className="flex items-center space-x-4">
@@ -35,20 +62,27 @@ export default function Invoice() {
                     <Skeleton className="h-4 w-[200px]" />
                 </div>
             </div>) : (
-                <div className="flex flex-row items-center">
-                    {prescriptions.map((p: AppointmentCardProps, index) => (
+                <div className="p-4">
+                    <div className="flex flex-row items-center">
+                    {prescriptions.map((p, index) => (
                         <AppointmentCard
                             key={p._id}
                             _id={p._id}
-                            patient={p.patient}
+                            patient={p.appointment.patient}
                             bookingDate={p.appointment.bookingDate}
                             bookingTime={p.appointment.bookingTime}
                             department={p.appointment.department}
                             status={p.appointment.status}
-                            btn={user?.role == 'nurse' ? { bt1: '', bt2: 'Thanh Toán' } : { bt1: '', bt2: 'Kê Toa' }}
+                            btn={user?.role == 'nurse' ? { bt1: 'Xuất PDF', bt2: 'Thanh Toán' } : { bt1: '', bt2: 'Kê Toa' }}
+                            onConfirm={removePrescription}
                         />
 
                     ))}
+                    {/* <InvoiceDialog/> */}
+                    </div>
+                    {prescriptions.length > 0 && (
+                        <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange}/>
+                    )}
                 </div>
             )
             }

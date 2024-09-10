@@ -45,7 +45,8 @@ export const getUserAppointments = async (req, res) => {
         const options = {
             page: req.query.page,
             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
-            sortBy: { bookingDate: -1 }
+            sortBy: { bookingDate: -1 },
+            limit: 6,
         };
 
         const result = await appointmentPaginator(query, options);
@@ -70,7 +71,8 @@ export const getPatientAppointments = async(req, res) => {
         const options = {
             page: req.query.page,
             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
-            sortBy: { bookingDate: -1 }
+            sortBy: { bookingDate: -1 },
+            limit: 6,
         };
 
         const result = await appointmentPaginator(query, options);

@@ -9,6 +9,7 @@ import medicineRoutes from './routes/medicineRoutes.js';
 import prescriptionRoutes from './routes/prescriptionRoutes.js';
 import departmentRoutes from './routes/departmentRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import { adminJs, router } from './config/admin.js';
 import dotenv from 'dotenv';
 import session from 'express-session';
@@ -66,6 +67,7 @@ app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/department', departmentRoutes);
 
 app.use('/statistics', statsRoutes)
+app.use('/api/payment', paymentRoutes);
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);

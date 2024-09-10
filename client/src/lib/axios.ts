@@ -7,11 +7,20 @@ export const endpoints = {
   'available-booking-times': '/appointment/available-booking-times',
   'search-medicines': "/medicine",
   'create-prescription': "/prescription/",
-  'create-invoice': '/prescription/today/',
+  'patient-invoices': '/prescription/today/',
+  'create-invoice': (prescriptionId: string) => `/prescription/${prescriptionId}/invoice`,
   'my-appointment': '/appointment/',
+<<<<<<< HEAD
   'register': '/auth/register/',
   'departments': '/department/',
   'cancel-appointment': (id: any)=>`/appointment/${id}/cancel`
+=======
+  'confirm-appointment': (appointmentId: string) =>`/appointment/${appointmentId}/confirm/`,
+  'reject-appointment': (appointmentId: string) => `/appointment/${appointmentId}/reject`,
+  'register': '/auth/register/',
+  'create-momo': "/payment/create-momo",
+  'create-zalopay': "/payment/create-zalopay",
+>>>>>>> fc3caac64d662e480414805676a4610a4f97b76b
 }
 
 const axiosInstance = axios.create({
