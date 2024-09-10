@@ -16,6 +16,13 @@ const appointmentPaginator = createPaginator(Appointment);
 
 
 export const createAppointment = async (req, res) => {
+    console.log(req.body);
+    const a = await Appointment.findOne(req.body)
+    console.log(a);
+    if(a && !['ĐÃ HUỶ', 'ĐÃ TỪ CHỐI'].includes(a.status)) {
+        res.status(400).send({message: 'Duplicate appointment'});
+        return;
+    }
     const appointment = new Appointment({
         ...req.body,
         patient: req.user.id
@@ -31,7 +38,10 @@ export const createAppointment = async (req, res) => {
 
 export const getUserAppointments = async (req, res) => {
     try {
-        const query = { patient: req.user.id };
+        let query = { patient: req.user.id };
+        if (req.query.status){
+            query.status = req.query.status
+        }
         const options = {
             page: req.query.page,
             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
@@ -195,10 +205,13 @@ export const getNext30DaysAppointmentsCount = async (req, res) => {
         const pipeline = [
             {
                 $match: {
+                    status: {
+                        $nin: ['ĐÃ HUỶ', 'ĐÃ TỪ CHỐI']
+                    },
                     bookingDate: {
                         $gte: tomorrow.toDate(),
                         $lt: thirtyDaysFromTomorrow.toDate()
-                    }
+                    },
                 }
             },
             {
@@ -256,7 +269,7 @@ export const getAvailableBookingTimes = async (req, res) => {
                 $lt: endDate
             },
             department,
-            status: { $ne: 'ĐÃ HUỶ' }
+            status: { $nin: ['ĐÃ HUỶ', 'ĐÃ TỪ CHỐI'] }
         }).select('bookingTime -_id');
 
 

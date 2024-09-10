@@ -27,6 +27,18 @@ AdminJS.registerAdapter({
 const adminJs = new AdminJS({
     databases: [],
     rootPath: '/admin',
+    branding: {
+        companyName: 'Loc Hieu Clinic',
+        logo: '/logo.png',
+    },
+    pages: {
+        statistics: {
+            handler: async (req, res, context) => {
+                console.log('statistics handler received    ')
+                res.redirect('/statistics')
+            },
+        }
+    },
     resources: [
         {
             resource: User,
