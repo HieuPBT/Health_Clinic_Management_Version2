@@ -1,12 +1,17 @@
 import axios from 'axios';
 
 export const endpoints = {
+  'create-appointment': '/appointment/',
   'patient-appointments': "/appointment/patient-appointments/",
+  'appointments-count': '/appointment/appointment-counts/',
+  'available-booking-times': '/appointment/available-booking-times',
   'search-medicines': "/medicine",
   'create-prescription': "/prescription/",
   'create-invoice': '/prescription/today/',
   'my-appointment': '/appointment/',
-  'register': '/auth/register/'
+  'register': '/auth/register/',
+  'departments': '/department/',
+  'cancel-appointment': (id: any)=>`/appointment/${id}/cancel`
 }
 
 const axiosInstance = axios.create({

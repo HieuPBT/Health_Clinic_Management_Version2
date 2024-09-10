@@ -4,7 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import axiosInstance from '@/lib/axios';
+import axiosInstance, { endpoints } from '@/lib/axios';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
 
 type Department = {
   _id: string;
@@ -41,15 +43,22 @@ const MyAppointments: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
+
+  const {toast} = useToast();
 
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.get<ApiResponse>('http://localhost:8888/api/appointment', {
-        params: {
-          page: currentPage,
-          limit: 10,
-        }
+      let params = {
+        page: currentPage
+      }
+      if (currentStatus !== 'TẤT CẢ') {
+        params.status = currentStatus;
+      }
+      const response = await axiosInstance.get(endpoints['my-appointment'], {
+        params: params
       });
       setAppointments(response.data.results);
       setTotalPages(response.data.totalPages);
@@ -61,11 +70,39 @@ const MyAppointments: React.FC = () => {
 
   useEffect(() => {
     fetchAppointments();
-  }, [currentPage]);
+  }, [currentPage, currentStatus]);
 
   const handleAction = async (appointmentId: string, action: 'cancel' | 'rebook' | 'pay') => {
-    console.log(`${action} appointment ${appointmentId}`);
+    try {
+      switch (action) {
+        case 'cancel':
+          setAppointmentToCancel(appointmentId);
+          setShowConfirmDialog(true);
+        case 'rebook':
+        case 'pay':
+        default:
+      }
+    } catch (err) {
+      console.log(err);
+    }
     await fetchAppointments();
+  };
+
+  const confirmCancelAppointment = async () => {
+    if (appointmentToCancel) {
+      try {
+        await axiosInstance.patch(endpoints['cancel-appointment'](appointmentToCancel));
+        toast({
+          title: 'Thành công!',
+          description: 'Hủy lịch hẹn thành công! Bạn có thể nhấn nút "đặt lại" để đặt lịch lại.'
+        })
+        await fetchAppointments();
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    setShowConfirmDialog(false);
+    setAppointmentToCancel(null);
   };
 
   const renderActionButton = (appointment: Appointment) => {
@@ -114,10 +151,14 @@ const MyAppointments: React.FC = () => {
     ? appointments
     : appointments.filter(app => app.status === currentStatus);
 
+  const handleStatusChange = (newStatus: AppointmentStatus) => {
+    setCurrentStatus(newStatus);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Appointments</h1>
-      <Tabs value={currentStatus} onValueChange={(value) => setCurrentStatus(value as AppointmentStatus)}>
+      <Tabs value={currentStatus} onValueChange={(value) => handleStatusChange(value as AppointmentStatus)}>
         <TabsList>
           <TabsTrigger value="TẤT CẢ">Tất cả</TabsTrigger>
           <TabsTrigger value="CHƯA XÁC NHẬN">Chưa xác nhận</TabsTrigger>
@@ -144,12 +185,27 @@ const MyAppointments: React.FC = () => {
               Trang trước
             </Button>
             <span>Trang {currentPage} / {totalPages}</span>
-            <Button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+            <Button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
               Tiếp
             </Button>
           </div>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận hủy lịch hẹn</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelAppointment}>Xác nhận hủy</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
