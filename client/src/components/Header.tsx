@@ -1,5 +1,4 @@
-"use client"
-
+'use client'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from './mode-toggle'
@@ -15,8 +14,9 @@ import {
 import { useUser } from "@/contexts/UserContext"
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Home, User, Key, Newspaper, Calendar, FileText, Users, Plus } from 'lucide-react'
+import ChatboxList from '@/components/ChatboxList'
 
 const Header = () => {
     const { user, logout } = useUser()
@@ -26,8 +26,14 @@ const Header = () => {
 
     const handleLogout = () => {
         logout()
-        router.push('/login')
+        // router.push('/login')
     }
+
+    useEffect(() => {
+        if (!user) {
+          router.push('/login');
+        }
+      }, [user, router]);
 
     const commonRoutes = [
         { href: '/', label: 'Trang Chủ', icon: Home },
@@ -57,6 +63,8 @@ const Header = () => {
 
     return (
         <header className="border-b">
+            {user &&
+                <ChatboxList />}
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">

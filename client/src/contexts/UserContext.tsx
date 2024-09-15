@@ -38,7 +38,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userData.dateOfBirth) {
           userData.dateOfBirth = new Date(userData.dateOfBirth).toISOString().split('T')[0]
         }
-        console.log(userData)
         setUser(userData);
         return userData;
       } catch (error) {

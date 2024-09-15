@@ -25,7 +25,8 @@ import {
     updatePassword,
     Auth,
     User,
-    UserCredential
+    UserCredential,
+    fetchSignInMethodsForEmail
 } from "firebase/auth";
 import moment from 'moment';
 
@@ -82,7 +83,6 @@ export const getChattingUserData = (callback: (assistants: UserData[]) => void, 
     getMyChattingUser((c) => {
         chats = c;
     }, email);
-    console.log(chats, email);
 
     const listener: ValueListener = (snapshot: DataSnapshot) => {
         const assistants: UserData[] = [];
@@ -100,14 +100,12 @@ export const getChattingUserData = (callback: (assistants: UserData[]) => void, 
 };
 
 export const getMyChattingUser = (callback: (chats: string[]) => void, email: string): Unsubscribe => {
-    console.log('getMyChattingUser')
     const chatsRef: DatabaseReference = ref(database, 'users/' + encodeEmail(email) + '/chats');
 
     const listener: ValueListener = (snapshot: DataSnapshot) => {
         const chats: string[] = [];
         snapshot.forEach((childSnapshot: DataSnapshot) => {
             const email = childSnapshot.val().email;
-            console.log(childSnapshot.val());
             chats.push(email);
         });
         callback(chats);
@@ -171,7 +169,6 @@ export const chatListener = (callback: (pre: any) => void, userEmail: string): (
 
 export const listenToAllChats = (callback: (message: Message) => void, currentUserEmail: string): Unsubscribe => {
     const encodedCurrentUserEmail = encodeEmail(currentUserEmail);
-    console.log(currentUserEmail)
     const chatsRef: DatabaseReference = ref(database, 'chats');
 
     const chatsListener: ValueListener = (snapshot: DataSnapshot) => {
@@ -218,7 +215,6 @@ export const listenNewNotifications = (email: string, callback: (notification: N
 
     const listener = (snapshot: any) => {
         const notification = snapshot.val() as Notification;
-        console.log(notification);
         callback(notification);
     };
 
@@ -232,7 +228,6 @@ export const readMessage = (email: string, sender: string): () => void => {
         if (snapshot.exists()) {
             try {
                 await remove(notiRef);
-                console.log(`Notification from ${sender} for ${email} removed successfully.`);
             } catch (error) {
                 console.error(`Failed to remove notification from ${sender} for ${email}: `, error);
             }
@@ -293,13 +288,21 @@ export const updatePasswordFirebase = async (newPassword: string): Promise<void>
         }
 
         await updatePassword(user, newPassword);
-        console.log("Password updated successfully.");
     } catch (error) {
         console.error("Error updating password:", error);
         throw error;
     }
 };
 
+export async function checkAccountExists(email: string, password: string): Promise<boolean> {
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        return false;
+    } catch (error) {
+        console.error("Error checking account existence:", error);
+        return true;
+    }
+}
 
 export const handleRegisterFirebase = async (email: string, password: string, fullName: string, avatar: string): Promise<void> => {
     try {
@@ -326,36 +329,44 @@ export interface LoginData {
 }
 
 export const handleLoginFirebase = async (email: string, password: string, avatar: string, fullName: string): Promise<void> => {
-    console.log(email, password)
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        // await updateUserData(encodeEmail(user.email!), {
-        //     status: "online",
-        //     lastActive: new Date(),
-        //     avatar: avatar,
-        //     fullName: fullName,
-        // });
+        console.log({
+            status: "online",
+            lastActive: new Date(),
+            email: email,
+            avatar: avatar,
+            fullName: fullName,
+        });
+        setUserData(encodeEmail(user.email!), {
+            status: "online",
+            lastActive: new Date(),
+            email: email,
+            avatar: avatar,
+            fullName: fullName,
+        });
     } catch (error) {
         if (error instanceof FirebaseError) {
             switch (error.code) {
-              case 'auth/invalid-credential':
-                console.error('Invalid email or password');
-                throw new Error('Invalid email or password');
-              case 'auth/user-disabled':
-                console.error('This account has been disabled');
-                throw new Error('This account has been disabled');
-              case 'auth/user-not-found':
-                console.error('No user found with this email');
-                throw new Error('No user found with this email');
-              default:
-                console.error('An error occurred during login:', error.message);
-                throw error;
+                case 'auth/invalid-credential':
+
+                    console.error('Invalid email or password');
+                    throw new Error('Invalid email or password');
+                case 'auth/user-disabled':
+                    console.error('This account has been disabled');
+                    throw new Error('This account has been disabled');
+                case 'auth/user-not-found':
+                    console.error('No user found with this email');
+                    throw new Error('No user found with this email');
+                default:
+                    console.error('An error occurred during login:', error.message);
+                    throw error;
             }
-          } else {
+        } else {
             console.error('An unexpected error occurred:', error);
             throw error;
-          }
+        }
     }
 };
 

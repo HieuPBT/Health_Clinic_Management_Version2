@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -10,8 +9,8 @@ import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/components/ui/use-toast"
 import axiosInstance from "@/lib/axios"
 import { useUser } from "@/contexts/UserContext"
-import ChatboxList from "@/components/ChatboxList"
-import { handleLoginFirebase } from "@/lib/firebase"
+import { checkAccountExists, handleLoginFirebase, handleRegisterFirebase } from "@/lib/firebase"
+import { FirebaseError } from "firebase/app"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -29,17 +28,21 @@ export default function LoginPage() {
       const response = await axiosInstance.post("/auth/login", { email, password })
       localStorage.setItem("token", response.data.token)
       const user = await fetchUser()
+
+      if (response.status === 200) {
+        await handleFirebaseAuth(email, password, user)
+      }
+
       toast({
         title: "Đăng nhập thành công!",
         description: "Chào mừng trở lại!",
       })
-
-      handleLoginFirebase(email, password, user?.avatar || "", user?.fullName || "");
       router.push("/")
     } catch (error) {
+      console.error("Login error:", error)
       toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
+        title: "Đăng nhập thất bại",
+        description: "Vui lòng kiểm tra lại thông tin đăng nhập và thử lại.",
         variant: "destructive",
       })
     } finally {
@@ -47,15 +50,42 @@ export default function LoginPage() {
     }
   }
 
+  async function handleFirebaseAuth(email: string, password: string, user: any) {
+    try {
+      const accountExists = await checkAccountExists(email)
+
+      if (accountExists) {
+        // Tài khoản đã tồn tại, tiến hành đăng nhập
+        await handleLoginFirebase(email, password, user?.avatar || "", user?.fullName || "")
+        console.log("Firebase login successful")
+      } else {
+        // Tài khoản chưa tồn tại, tiến hành đăng ký
+        await handleRegisterFirebase(email, password, user?.fullName || "", user?.avatar || "")
+        console.log("Firebase account created successfully")
+      }
+    } catch (error) {
+      console.error("Firebase auth error:", error)
+      if (error instanceof FirebaseError) {
+        toast({
+          title: "Xác thực Firebase thất bại",
+          description: `Lỗi: ${error.code}. Một số tính năng có thể bị hạn chế.`,
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Xác thực Firebase thất bại",
+          description: "Đã xảy ra lỗi không xác định. Một số tính năng có thể bị hạn chế.",
+          variant: "destructive"
+        })
+      }
+    }
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <ChatboxList />
       <Card className="w-[350px]">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle className="text-2xl">Đăng Nhập</CardTitle>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="grid gap-4">
@@ -71,7 +101,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mật khẩu</Label>
               <Input
                 id="password"
                 type="password"
@@ -86,7 +116,7 @@ export default function LoginPage() {
               {isLoading && (
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Sign In
+              Đăng nhập
             </Button>
           </CardFooter>
         </form>
