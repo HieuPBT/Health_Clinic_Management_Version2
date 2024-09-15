@@ -47,7 +47,7 @@ const Header = () => {
         ],
         doctor: [
             { href: '/appointment', label: 'Lịch hẹn', icon: Calendar },
-            { href: '/patient', label: 'Hồ sơ bệnh án', icon: Users },
+            { href: '/patient-profile', label: 'Hồ sơ bệnh án', icon: Users },
         ],
         patient: [
             { href: '/create-appointment', label: 'Đặt Lịch Khám', icon: Plus },

@@ -132,6 +132,7 @@ export const getPatientPrescriptions = async (req, res) => {
             if (patient) {
                 query['appointment.patient'] = patient._id;
             }
+            else console.log('Not found')
         }
 
         if (start_date && end_date) {
@@ -141,9 +142,18 @@ export const getPatientPrescriptions = async (req, res) => {
             };
         }
 
-        const prescriptions = await Prescription.find(query).populate('appointment');
+        const options = {
+            page: req.query.page,
+            baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
+            sortBy: { 'appointment.bookingDate': -1 },
+            limit: req.query.limit
+        }
 
-        res.json(prescriptions);
+        // const prescriptions = await Prescription.find(query).populate('appointment');
+        // res.json(prescriptions);
+        const result = await prescriptionPaginator(query, options);
+
+        res.json((result));
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });

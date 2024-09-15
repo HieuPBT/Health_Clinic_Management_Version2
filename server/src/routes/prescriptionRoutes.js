@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/', authenticateToken, authorizeRole(['doctor']), prescriptionController.createPrescription);
 router.get('/today', authenticateToken, authorizeRole(['nurse']), prescriptionController.getTodayPrescriptions);
-router.get('/patient', authenticateToken, authorizeRole(['doctor']), prescriptionController.getPatientPrescriptions);
+router.get('/patient-prescriptions', authenticateToken, authorizeRole(['doctor']), prescriptionController.getPatientPrescriptions);
 router.post('/:id/invoice', authenticateToken, authorizeRole(['nurse']), prescriptionController.createInvoice);
 
 export default router;
