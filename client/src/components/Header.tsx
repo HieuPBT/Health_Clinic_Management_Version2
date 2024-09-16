@@ -62,22 +62,22 @@ const Header = () => {
     }
 
     return (
-        <header className="border-b">
+        <header className="bg-white shadow-md ">
             {user &&
                 <ChatboxList />}
-            <div className="container mx-auto px-4">
+            <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center">
+                    <div className="flex-shrink-0 flex items-center">
                         <Link href="/" className="font-bold text-xl mr-8">
                             <Image
+                                className="h-8 w-auto"
                                 src="https://res.cloudinary.com/dlwiwldkd/image/upload/v1723697301/logo_dfpsko.png"
                                 alt="Logo"
                                 width={60}
-                                height={40}
-                                priority
+                                height={60}
                             />
                         </Link>
-                        <nav className="hidden md:flex space-x-4">
+                        <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
                             {getRoutes().map((route) => (
                                 <Link
                                     key={route.href}
@@ -91,6 +91,7 @@ const Header = () => {
                                 </Link>
                             ))}
                         </nav>
+
                     </div>
                     <div className="flex items-center space-x-4">
                         <ModeToggle />
@@ -120,7 +121,7 @@ const Header = () => {
                         )}
                     </div>
                 </div>
-            </div>
+            </nav>
         </header>
     )
 }

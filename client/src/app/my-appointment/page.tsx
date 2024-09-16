@@ -51,7 +51,7 @@ const MyAppointments: React.FC = () => {
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
-      let params = {
+      let params:any = {
         page: currentPage
       }
       if (currentStatus !== 'TẤT CẢ') {

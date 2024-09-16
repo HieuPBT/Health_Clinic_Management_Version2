@@ -135,7 +135,7 @@ const ChatboxList: React.FC = () => {
     };
 
     return (
-        <div className={`fixed bottom-5 right-5 flex flex-row items-end ${showChatboxes ? 'open' : ''}`}>
+        <div className={`fixed bottom-5 right-5 flex flex-row items-end z-10 ${showChatboxes ? 'open' : ''}`}>
             <div className="flex flex-row-reverse gap-2 mr-2">
                 {openChatboxes.map((id) => {
                     const u = users.find(a => a.email === id);

@@ -42,7 +42,7 @@ export const getStatsData = async (req, res) => {
             {
                 $group: {
                     _id: groupStage._id,
-                    totalRevenue: { $sum: { $add: ["$appointmentFee", "$prescriptionFee"] } }
+                    totalRevenue: { $sum:  "$appointmentFee"  }
                 }
             }
         ]);

@@ -17,8 +17,8 @@ export default function Invoice() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const loadPrescriptions = async (currentPg: number) => {
-        try{
-            const res = await axiosInstance.get(endpoints['patient-invoices'], 
+        try {
+            const res = await axiosInstance.get(endpoints['patient-invoices'],
                 {
                     params: {
                         page: currentPg || 0,
@@ -28,16 +28,16 @@ export default function Invoice() {
             setPrescriptions(res.data.results)
             setTotalPages(res.data.totalPages);
             setLoading(false);
-        } catch(error){
+        } catch (error) {
             console.error("Error loading today prescriptions", error);
-            
+
         }
-        
+
         // console.log(res.data.results);
     }
 
     const removePrescription = (prescriptionsId: string) => {
-        setPrescriptions(prevrescriptions=> prevrescriptions.filter(prescription => prescription._id !== prescriptionsId));
+        setPrescriptions(prevrescriptions => prevrescriptions.filter(prescription => prescription._id !== prescriptionsId));
     }
 
     useEffect(() => {
@@ -53,17 +53,22 @@ export default function Invoice() {
         loadPrescriptions(page)
     }
 
+    // if (loading) {
+    //     return (
+    //         <div className="flex items-center space-x-4">
+    //             <Skeleton className="h-12 w-12 rounded-full" />
+    //             <div className="space-y-2">
+    //                 <Skeleton className="h-4 w-[250px]" />
+    //                 <Skeleton className="h-4 w-[200px]" />
+    //             </div>
+    //         </div>
+    //     );
+    // }
+
     return (
         <>
-            {loading ? (<div className="flex items-center space-x-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                </div>
-            </div>) : (
-                <div className="p-4">
-                    <div className="flex flex-row items-center">
+            <div className="p-4">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {prescriptions.map((p, index) => (
                         <AppointmentCard
                             key={p._id}
@@ -79,13 +84,19 @@ export default function Invoice() {
 
                     ))}
                     {/* <InvoiceDialog/> */}
-                    </div>
-                    {prescriptions.length > 0 && (
-                        <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange}/>
-                    )}
                 </div>
-            )
-            }
+                {prescriptions.length > 0 ? (
+                    <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange} />
+                ) : (
+                    <div className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-[250px]" />
+                            <Skeleton className="h-4 w-[200px]" />
+                        </div>
+                    </div>
+                )}
+            </div>
         </>
     )
 }

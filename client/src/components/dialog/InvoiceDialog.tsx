@@ -47,7 +47,7 @@ export const InvoiceDialog: React.FC<InvoiceProps> = ({ isOpen, onOpenChange, on
             amount: 0,
             orderInfo: "",
             redirectUrl: "http://localhost:3000/invoice",
-            ipnUrl: "https://eb74-171-243-48-206.ngrok-free.app/api/payment/ipn-momo",
+            ipnUrl: "https://75d5-171-243-48-206.ngrok-free.app/api/payment/ipn-momo",
             lang: "en",
             autoCapture: true,
         },

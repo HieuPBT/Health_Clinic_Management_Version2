@@ -1,4 +1,4 @@
-import AdminJS from 'adminjs'
+import AdminJS, { ComponentLoader } from 'adminjs'
 import AdminJSExpress from '@adminjs/express'
 import * as AdminJSMongoose from '@adminjs/mongoose'
 import dotenv from 'dotenv'
@@ -24,7 +24,16 @@ AdminJS.registerAdapter({
     Database: AdminJSMongoose.Database,
 })
 
+const componentLoader = new ComponentLoader();
+const Components = {
+    Dashboard: componentLoader.add("Dashboard", "./invoiceChart"),
+  };
+
 const adminJs = new AdminJS({
+    componentLoader,
+    dashboard: {
+        
+      },
     databases: [],
     rootPath: '/admin',
     branding: {
@@ -33,9 +42,10 @@ const adminJs = new AdminJS({
     },
     pages: {
         statistics: {
+            component: Components.Dashboard,
             handler: async (req, res, context) => {
                 console.log('statistics handler received    ')
-                res.redirect('/statistics')
+                res.redirect('/statistics/view')
             },
         }
     },

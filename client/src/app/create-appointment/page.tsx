@@ -7,6 +7,8 @@ import { Calendar } from '@/components/ui/calendar';
 import axiosInstance, { endpoints } from '@/lib/axios';
 import { yyyyMdFmt } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
 
 const ALLOWED_BOOKING_TIMES = [
   '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -26,6 +28,8 @@ interface Department {
 }
 
 const AppointmentBooking = () => {
+  const { user } = useUser();
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [department, setDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
@@ -83,6 +87,10 @@ const AppointmentBooking = () => {
     } catch (err) {
       console.error(err);
     }
+  }
+  if(!user){
+    router.push("/login")
+    return null;
   }
 
   useEffect(() => {
