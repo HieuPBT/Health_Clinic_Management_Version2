@@ -52,17 +52,7 @@ export default function LoginPage() {
 
   async function handleFirebaseAuth(email: string, password: string, user: any) {
     try {
-      const accountExists = await checkAccountExists(email)
-
-      if (accountExists) {
-        // Tài khoản đã tồn tại, tiến hành đăng nhập
-        await handleLoginFirebase(email, password, user?.avatar || "", user?.fullName || "")
-        console.log("Firebase login successful")
-      } else {
-        // Tài khoản chưa tồn tại, tiến hành đăng ký
-        await handleRegisterFirebase(email, password, user?.fullName || "", user?.avatar || "")
-        console.log("Firebase account created successfully")
-      }
+      await handleLoginFirebase(email, password, user?.avatar || "", user?.fullName || "")
     } catch (error) {
       console.error("Firebase auth error:", error)
       if (error instanceof FirebaseError) {
