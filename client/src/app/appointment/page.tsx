@@ -1,15 +1,16 @@
 'use client'
-import { useUser } from "@/contexts/UserContext"
+
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import axiosInstance, { endpoints } from "@/lib/axios"
 import AppointmentCard from "@/components/AppointmentCard"
 import Paginator from "@/components/Pagination"
 import { AppointmentInterface } from "@/components/interface/AppointmentInterface"
 
 export default function Appointment() {
-    const { user } = useUser()
+    const { user } = useContext(UserContext) as UserContextType
     const router = useRouter()
     const [loading, setLoading] = useState(true);
     const [appointments, setAppointments] = useState<AppointmentInterface[]>([]);
@@ -49,7 +50,7 @@ export default function Appointment() {
         setAppointments(prevAppointments => prevAppointments.filter(appointment => appointment._id !== appointmentId));
     }
 
-    
+
 
     return (
         <div className="p-4">
@@ -67,7 +68,7 @@ export default function Appointment() {
                     />
                 ))}
             </div>
-            {appointments.length > 0 ? ( 
+            {appointments.length > 0 ? (
                 <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange} />
             ): (
                 <div className="flex items-center space-x-4">

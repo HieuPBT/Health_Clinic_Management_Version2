@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useContext } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -20,7 +20,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import axiosInstance from "@/lib/axios"
-import { useUser } from "@/contexts/UserContext"
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 
 const profileFormSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -41,7 +41,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { setUser: setUserGlobal, user: userGlobal } = useUser();
+  const { setUser: setUserGlobal, user: userGlobal } = useContext(UserContext) as UserContextType;
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),

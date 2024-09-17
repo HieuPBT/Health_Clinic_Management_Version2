@@ -1,5 +1,5 @@
 "use client"
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import axiosInstance, { endpoints } from '@/lib/axios';
 import { yyyyMdFmt } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { useUser } from '@/contexts/UserContext';
+import { UserContext, UserContextType } from "@/contexts/UserContext";
 import { useRouter } from 'next/navigation';
 
 const ALLOWED_BOOKING_TIMES = [
@@ -28,7 +28,7 @@ interface Department {
 }
 
 const AppointmentBooking = () => {
-  const { user } = useUser();
+  const { user, isLoading } = useContext(UserContext) as UserContextType;
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [department, setDepartment] = useState('');
@@ -88,7 +88,7 @@ const AppointmentBooking = () => {
       console.error(err);
     }
   }
-  if(!user){
+  if(!user && !isLoading){
     router.push("/login")
     return null;
   }

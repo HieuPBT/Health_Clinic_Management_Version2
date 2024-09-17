@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { handleRegisterFirebase, updatePasswordFirebase } from '../utils/firebase.js';
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -20,10 +21,18 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre('save', async function (next) {
+  handleRegisterFirebase(this.email, this.password, this.fullName, this.avatar);
   if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 8);
   }
   next();
+});
+
+userSchema.pre('updateOne', async function () {
+  const update = this.getUpdate();
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 8);
+  }
 });
 
 userSchema.methods.generateAuthToken = async function () {

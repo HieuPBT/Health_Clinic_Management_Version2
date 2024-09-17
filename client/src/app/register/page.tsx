@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
@@ -10,60 +10,142 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import axiosInstance, { endpoints } from "@/lib/axios";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { debounce } from "@mui/material";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function RegisterPage() {
     const [step, setStep] = useState(1);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [formData, setFormData] = useState({
+        email: "",
+        fullName: "",
+        password: "",
+        confirmPassword: "",
+        gender: "",
+        dateOfBirth: "",
+        phoneNumber: "",
+        address: "",
+        healthInsurance: ""
+    });
     const [avatar, setAvatar] = useState(null);
-    const [gender, setGender] = useState("");
-    const [dateOfBirth, setDateOfBirth] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [address, setAddress] = useState("");
-    const [healthInsurance, setHealthInsurance] = useState("");
+    const [isEmailValid, setIsEmailValid] = useState(false);
+    const [isEmailAvailable, setIsEmailAvailable] = useState(true);
+    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
+
+    const validateEmail = (email) => {
+        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        return re.test(String(email).toLowerCase());
+    };
+
+    const checkEmailAvailability = useCallback(
+        debounce(async (email) => {
+            if (email && isEmailValid) {
+                setIsCheckingEmail(true);
+                try {
+                    const response = await axiosInstance.post(endpoints['check-email'], { email });
+                    setIsEmailAvailable(response.data.available);
+                } catch (error) {
+                    console.error("Error checking email:", error);
+                    setIsEmailAvailable(true);
+                }
+                setIsCheckingEmail(false);
+            }
+        }, 500),
+        [isEmailValid]
+    );
+
+    const handleGenderChange = (value) => {
+        setFormData(prev => ({ ...prev, gender: value }));
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'email') {
+            const isValid = validateEmail(value);
+            setIsEmailValid(isValid);
+            if (isValid) {
+                checkEmailAvailability(value);
+            } else {
+                setIsEmailAvailable(true);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (isEmailValid) {
+            checkEmailAvailability(formData.email);
+        }
+    }, [isEmailValid, formData.email, checkEmailAvailability]);
 
     const handleContinue = () => {
-        setStep(step + 1);
+        if (isEmailValid && isEmailAvailable && formData.email) {
+            setStep(2);
+        } else {
+            toast({
+                title: "Email không hợp lệ",
+                description: "Vui lòng nhập một địa chỉ email hợp lệ và chưa được sử dụng.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleBack = () => {
-        setStep(step - 1);
+        setStep(1);
     };
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event:any) => {
         event.preventDefault();
 
-        const formData = new FormData();
-        formData.append("email", email);
-        formData.append("password", password);
-        formData.append("fullName", name);
-        formData.append("gender", gender);
-        formData.append("dateOfBirth", dateOfBirth);
-        formData.append("phoneNumber", phoneNumber);
-        formData.append("address", address);
-        formData.append("healthInsurance", healthInsurance);
+        if (formData.password !== formData.confirmPassword) {
+            toast({
+                title: "Lỗi",
+                description: "Mật khẩu xác nhận không khớp.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const formDataToSend = new FormData();
+        Object.keys(formData).forEach(key => {
+            if (key !== 'confirmPassword') {
+                formDataToSend.append(key, formData[key]);
+            }
+        });
         if (avatar) {
-            formData.append("avatar", avatar);
+            formDataToSend.append("avatar", avatar);
         }
 
         try {
-            const response = await axiosInstance.post(endpoints['register'], formData, {
+            const response = await axiosInstance.post(endpoints['register'], formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
 
             if (response.status === 200) {
-                console.log("Registration successful");
-                router.push('/login')
+                toast({
+                    title: "Thành công",
+                    description: "Đăng ký thành công, vui lòng kiểm tra email để kích hoạt tài khoản!",
+                });
+                router.push('/login');
             } else {
-                console.error("Registration failed");
+                toast({
+                    title: "Thất bại",
+                    description: "Đăng ký thất bại, đã có lỗi xảy ra",
+                    variant: "destructive",
+                });
             }
         } catch (error) {
             console.error("Error submitting the form:", error);
+            toast({
+                title: "Lỗi",
+                description: "Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -76,13 +158,16 @@ export default function RegisterPage() {
                             <ArrowBackIosIcon />
                         </Button>
                     )}
-                    {step === 1 ? "Create an account" : "Complete your profile"}
+                    {step === 1 ? "Tạo một tài khoản" : "Hoàn thành đăng ký"}
                 </CardHeader>
                 <CardContent>
                     {step === 1 ? (
                         <>
-                            <CardDescription>
-                                <span className="flex justify-center">Enter your email below to create your account</span>
+                            {/* Step 1 content */}
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    <span className="flex justify-center">Nhập email của bạn</span>
+                                </p>
                                 <div className="flex justify-between m-3">
                                     <Button variant="outline" className="w-full mr-10">
                                         <GitHubIcon className="mr-2 h-4 w-4" />Github
@@ -93,118 +178,148 @@ export default function RegisterPage() {
                                 </div>
                                 <div className="flex items-center my-4">
                                     <hr className="flex-grow border-t border-gray-300" />
-                                    <span className="mx-3 text-gray-500">OR CONTINUE WITH</span>
+                                    <span className="mx-3 text-gray-500">HOẶC TIẾP TỤC VỚI</span>
                                     <hr className="flex-grow border-t border-gray-300" />
                                 </div>
-                            </CardDescription>
+                            </div>
                             <form>
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input
                                             id="email"
+                                            name="email"
                                             type="email"
-                                            placeholder="Enter your email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Nhập địa chỉ email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
                                             required
+                                            autoComplete="off"
                                         />
+                                        {isEmailValid && isCheckingEmail && (
+                                            <p className="text-sm text-gray-500">Đang kiểm tra email...</p>
+                                        )}
+                                        {isEmailValid && !isCheckingEmail && !isEmailAvailable && (
+                                            <p className="text-sm text-red-500">Email đã tồn tại</p>
+                                        )}
                                     </div>
                                 </div>
-                                <Button type="button" onClick={handleContinue} className="w-full mt-6">Continue</Button>
+                                <Button
+                                    type="button"
+                                    onClick={handleContinue}
+                                    className="w-full mt-6"
+                                    disabled={!isEmailValid || !isEmailAvailable || isCheckingEmail}
+                                >
+                                    Tiếp tục
+                                </Button>
                             </form>
                         </>
                     ) : (
                         <form onSubmit={handleSubmit}>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Full Name</Label>
+                                    <Label htmlFor="name">Họ và tên</Label>
                                     <Input
                                         id="name"
+                                        name="fullName"
                                         type="text"
-                                        placeholder="Enter your full name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Họ Và Tên..."
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
                                         required
+                                        autoComplete="off"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Mật khẩu</Label>
                                     <Input
                                         id="password"
+                                        name="password"
                                         type="password"
-                                        placeholder="Create a password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Nhập mật khẩu"
+                                        value={formData.password}
+                                        onChange={handleInputChange}
                                         required
+                                        autoComplete="new-password"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                    <Label htmlFor="confirmPassword">Nhập lại mật khẩu</Label>
                                     <Input
                                         id="confirmPassword"
+                                        name="confirmPassword"
                                         type="password"
-                                        placeholder="Confirm your password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Nhập lại mật khẩu"
+                                        value={formData.confirmPassword}
+                                        onChange={handleInputChange}
                                         required
+                                        autoComplete="new-password"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="gender">Gender</Label>
-                                    <Input
-                                        id="gender"
-                                        type="text"
-                                        placeholder="Enter your gender"
-                                        value={gender}
-                                        onChange={(e) => setGender(e.target.value)}
-                                        required
-                                    />
+                                    <Label htmlFor="gender">Giới tính</Label>
+                                    <Select
+                                        onValueChange={handleGenderChange}
+                                        defaultValue={formData.gender}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn giới tính" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="male">Nam</SelectItem>
+                                            <SelectItem value="female">Nữ</SelectItem>
+                                            <SelectItem value="other">Khác</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                                    <Label htmlFor="dateOfBirth">Ngày sinh</Label>
                                     <Input
                                         id="dateOfBirth"
+                                        name="dateOfBirth"
                                         type="date"
-                                        value={dateOfBirth}
-                                        onChange={(e) => setDateOfBirth(e.target.value)}
+                                        value={formData.dateOfBirth}
+                                        onChange={handleInputChange}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Label htmlFor="phoneNumber">Số điện thoại</Label>
                                     <Input
                                         id="phoneNumber"
+                                        name="phoneNumber"
                                         type="tel"
-                                        placeholder="Enter your phone number"
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        placeholder="Nhập số điện thoại"
+                                        value={formData.phoneNumber}
+                                        onChange={handleInputChange}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">Address</Label>
+                                    <Label htmlFor="address">Địa chỉ</Label>
                                     <Input
                                         id="address"
+                                        name="address"
                                         type="text"
-                                        placeholder="Enter your address"
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
+                                        placeholder="Nhập địa chỉ"
+                                        value={formData.address}
+                                        onChange={handleInputChange}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="healthInsurance">Health Insurance</Label>
+                                    <Label htmlFor="healthInsurance">Số bảo hiểm y tế</Label>
                                     <Input
                                         id="healthInsurance"
+                                        name="healthInsurance"
                                         type="text"
-                                        placeholder="Enter your health insurance number"
-                                        value={healthInsurance}
-                                        onChange={(e) => setHealthInsurance(e.target.value)}
+                                        placeholder="Nhập số bảo hiểm y tế"
+                                        value={formData.healthInsurance}
+                                        onChange={handleInputChange}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="avatar">Avatar</Label>
+                                    <Label htmlFor="avatar">Ảnh đại diện</Label>
                                     <Input
                                         id="avatar"
                                         type="file"
@@ -212,7 +327,7 @@ export default function RegisterPage() {
                                     />
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full mt-6">Register</Button>
+                            <Button type="submit" className="w-full mt-6">Đăng ký</Button>
                         </form>
                     )}
                 </CardContent>

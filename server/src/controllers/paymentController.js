@@ -73,7 +73,6 @@ export const ipnMoMo = async (req, res) => {
         resultCode,
         orderId,
     } = req.body
-    console.log(req.body);
     if (resultCode === 0) {
         try {
 
@@ -98,9 +97,7 @@ export const ipnMoMo = async (req, res) => {
         } catch (error) {
             console.error("Lỗi cập nhật trạng thái", error);
         }
-        console.log("Thành công")
     }
-    else console.log("Thất bại")
 
     res.json({ "resultCode": resultCode, "message": message });
 }
@@ -126,7 +123,6 @@ export const queryMoMo = async (req, res) => {
             lang: "en",
             signature: signature,
         });
-        console.log(requestBody);
 
         const result = await axios.post(`${baseUrls.momo}${endpoints['query-momo']}`, requestBody,
             {
@@ -243,8 +239,8 @@ export const createZaloPay = async (req, res) => {
         key2: process.env.ZALOPAY_KEY2,
     };
 
-    const embed_data = { "redirecturl": redirecturl };
-    const items = [{}];
+    const embed_data = JSON.stringify({ "redirecturl": redirecturl });
+    const items = JSON.stringify([{}]);
     const transID = Math.floor(Math.random() * 1000000);
 
     const order = {
@@ -252,10 +248,10 @@ export const createZaloPay = async (req, res) => {
         app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
         app_user: "user123",
         app_time: Date.now(),
-        item: JSON.stringify(items),
-        embed_data: JSON.stringify(embed_data),
+        item: items,
+        embed_data: embed_data,
         amount: amount,
-        description: "Thanh toán với ZaloPay",
+        description: `Thanh toán cho đơn hàng #${transID}`,
         bank_code: "zalopayapp",
         callback_url: callback_url
     };
@@ -266,64 +262,71 @@ export const createZaloPay = async (req, res) => {
     order.mac = crypto.createHmac('sha256', config.key1).update(data).digest('hex');
 
     try {
-
-        console.log(order);
-        const result = await axios.post(baseUrls['zalopay'] + endpoints['create-zalopay'], order);
-
+        let result = await axios.post(baseUrls['zalopay'] + endpoints['create-zalopay'], null, { params: order });
+        result.data.app_trans_id = order.app_trans_id;
         res.json(result.data);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Lỗi!,không thể thanh toán với ZaloPay' });
+        console.error("ZaloPay Error:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Lỗi!,không thể thanh toán với ZaloPay', details: error.response ? error.response.data : error.message });
     }
-
 }
 
 export const callbackZaloPay = async (req, res) => {
-    const {
-        return_code,
-        return_message,
-    } = req.body
-
-    console.log(req.body.data);
     let result = {};
     const config = {
         key2: process.env.ZALOPAY_KEY2,
-    }
+    };
 
     try {
-        console.log(req.body);
         let dataStr = req.body.data;
         let reqMac = req.body.mac;
 
         let mac = crypto.createHmac('sha256', config.key2).update(dataStr).digest('hex');
-        console.log("mac", mac);
 
         if (reqMac !== mac) {
-            console.log("mac not equal");
             result.return_code = -1;
-            result.return_message = "mac not equal";
-        }
-        else {
-            console.log("Mac equals");
-            result.return_code = 1;
-            result.return_message = "success";
+            result.return_message = "MAC verification failed";
+        } else {
+
+            const data = JSON.parse(dataStr);
+            try {
+                const invoice = await Invoice.findOneAndUpdate(
+                    { orderId: data.app_trans_id },
+                    {
+                        paymentStatus: 'COMPLETED',
+                        transactionId: data.zp_trans_id,
+                        paidAmount: data.amount
+                    },
+                    { new: true }
+                );
+
+                if (invoice) {
+                    const pres = await Prescription.findById(invoice.prescription);
+
+                    if (pres) {
+                        await Appointment.findByIdAndUpdate(
+                            pres.appointment,
+                            { status: 'ĐÃ THANH TOÁN' }
+                        );
+                    }
+                }
+
+                result.return_code = 1;
+                result.return_message = "success";
+            } catch (error) {
+                console.error("Error updating database:", error);
+                result.return_code = 0;
+                result.return_message = "Database update failed";
+            }
         }
     } catch (ex) {
-        console.log("Lỗi mac");
+        console.error("Error processing callback:", ex);
         result.return_code = 0;
         result.return_message = ex.message;
     }
 
     res.json(result);
-
-    // if(return_code === 1){
-    //     console.log("Thành công thanh toán ZaloPay")
-    // } else console.error("Thất bại")
-
-    // res.json({"return_code": return_code, "return_message": return_message});
-
 }
-
 const formatDate = (date) => {
     return date.getFullYear().toString() +
            ('0' + (date.getMonth() + 1)).slice(-2) +
@@ -383,8 +386,7 @@ export const createVNPay = (req, res, next) => {
     let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
     vnp_Params['vnp_SecureHash'] = signed;
     vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
-    console.log(vnpUrl);
-    res.json({payUrl: vnpUrl});
+    res.json({payUrl: vnpUrl, orderId: orderId});
 }
 
 function sortObject(obj) {
@@ -403,7 +405,8 @@ function sortObject(obj) {
     return sorted;
 }
 
-export const ipnVnpay = (req, res, next) => {
+export const ipnVnpay = async (req, res) => {
+    console.log("Received VNPay IPN:", req.query);
     var vnp_Params = req.query;
     var secureHash = vnp_Params['vnp_SecureHash'];
 
@@ -414,17 +417,57 @@ export const ipnVnpay = (req, res, next) => {
     var secretKey = process.env.VNPAY_HASH_SECRET;
     var signData = querystring.stringify(vnp_Params, { encode: false });
     var hmac = crypto.createHmac("sha512", secretKey);
-    var signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
-
+    var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
     if (secureHash === signed) {
         var orderId = vnp_Params['vnp_TxnRef'];
         var rspCode = vnp_Params['vnp_ResponseCode'];
-        console.log(rspCode);
-        //Kiem tra du lieu co hop le khong, cap nhat trang thai don hang va gui ket qua cho VNPAY theo dinh dang duoi
-        res.status(200).json({ RspCode: '00', Message: 'success' })
-    }
-    else {
-        res.status(200).json({ RspCode: '97', Message: 'Fail checksum' })
+        var transactionNo = vnp_Params['vnp_TransactionNo'];
+        var amount = vnp_Params['vnp_Amount'];
+
+        console.log("Verified VNPay IPN for order:", orderId);
+
+        // Check if the payment was successful
+        if (rspCode === "00") {
+            try {
+                const invoice = await Invoice.findOneAndUpdate(
+                    { orderId: orderId },
+                    {
+                        paymentStatus: 'COMPLETED',
+                        transactionId: transactionNo,
+                        paidAmount: parseInt(amount) / 100 // VNPay amount is in VND cents
+                    },
+                    { new: true }
+                );
+
+                if (invoice) {
+                    console.log("Invoice updated:", invoice);
+                    const pres = await Prescription.findById(invoice.prescription);
+
+                    if (pres) {
+                        await Appointment.findByIdAndUpdate(
+                            pres.appointment,
+                            { status: 'ĐÃ THANH TOÁN' }
+                        );
+                        console.log("Appointment status updated");
+                    } else {
+                        console.log("Prescription not found");
+                    }
+                } else {
+                    console.log("Invoice not found for orderId:", orderId);
+                }
+
+                res.status(200).json({ RspCode: '00', Message: 'success' });
+            } catch (error) {
+                console.error("Error updating database:", error);
+                res.status(200).json({ RspCode: '99', Message: 'Unknown error' });
+            }
+        } else {
+            console.log("Payment failed with response code:", rspCode);
+            res.status(200).json({ RspCode: rspCode, Message: 'Payment failed' });
+        }
+    } else {
+        console.log("VNPay IPN checksum failed");
+        res.status(200).json({ RspCode: '97', Message: 'Fail checksum' });
     }
 }

@@ -1,11 +1,12 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import MySkeleton from '@/components/MySkeleton';
 
 const NewsFeed = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
@@ -47,15 +48,14 @@ const NewsFeed = () => {
     fetchNews();
   }, [fetchNews]);
 
-  if (error) return <div className="text-center text-red-500">{error}</div>;
+  if (error) return <MySkeleton rows={10} maxWidth={70} minWidth={50} />;
 
   return (
-    <div className="container mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-4">Latest News</h1>
+    <div className="container mx-auto p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {news.map((article, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             ref={index === news.length - 1 ? lastNewsElementRef : null}
             className="border rounded-lg overflow-hidden shadow-lg"
           >
@@ -64,20 +64,20 @@ const NewsFeed = () => {
             )}
             <div className="p-4">
               <h2 className="font-bold text-xl mb-2">{article.title}</h2>
-              <p className="text-gray-700 text-base">{article.description}</p>
-              <a 
-                href={article.url} 
-                target="_blank" 
+              <p className="text-base">{article.description}</p>
+              <a
+                href={article.url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
-                Read More
+                Xem chi tiết
               </a>
             </div>
           </div>
         ))}
       </div>
-      {loading && <div className="text-center mt-4">Loading more articles...</div>}
+      {loading && <MySkeleton rows={10} maxWidth={70} minWidth={50} />}
       {!hasMore && <div className="text-center mt-4">No more articles to load</div>}
       {news.length > 0 && (
         <div className="text-center mt-4">

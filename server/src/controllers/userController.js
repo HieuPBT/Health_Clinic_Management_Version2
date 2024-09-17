@@ -2,6 +2,41 @@ import User from "../models/User.js";
 import Patient from "../models/Patient.js";
 import cloudinary from "../config/cloudinary.js";
 
+export const getStaffList = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 9;
+        const search = req.query.search || '';
+
+        const query = {
+            role: { $in: ['doctor', 'nurse'] },
+            $or: [
+                { fullName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ]
+        };
+
+        const totalStaff = await User.countDocuments(query);
+        const totalPages = Math.ceil(totalStaff / limit);
+
+        const staff = await User.find(query)
+            .select('_id fullName role avatar email')
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean();
+
+        res.status(200).json({
+            staff,
+            currentPage: page,
+            totalPages,
+            totalStaff
+        });
+    } catch (error) {
+        console.error('Error fetching medical staff:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getUserProfile = async (req, res) => {
     try {
         let user = await User.findById(req.params.id || req.user.id).select('-password -tokens');

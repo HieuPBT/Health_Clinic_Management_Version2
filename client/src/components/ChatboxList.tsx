@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUser } from '@/contexts/UserContext';
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 import { chatListener, getChattingUserData, getMyChattingUser, getUserInfoByEmail, listenNewNotifications, listenToAllChats, readMessage, startChat } from '@/lib/firebase';
 import moment from 'moment';
 import Chatbox from '@/components/Chatbox';
@@ -21,6 +21,7 @@ moment.locale('vi');
 
 const UPDATE_INTERVAL_MS = 10000;
 import { UserData } from '@/lib/firebase';
+import { OPEN_CHAT_EVENT } from '@/lib/chatEvents';
 
 interface Notification {
     email: string;
@@ -31,37 +32,43 @@ const ChatboxList: React.FC = () => {
     const [openChatboxes, setOpenChatboxes] = useState<string[]>([]);
     const [showChatboxes, setShowChatboxes] = useState<boolean>(false);
     const [isInputExpanded, setIsInputExpanded] = useState<boolean>(false);
-    const { user } = useUser();
+    const { user } = useContext(UserContext) as UserContextType;
     const inputRef = useRef<HTMLInputElement>(null);
     const lastUpdateRef = useRef(Date.now());
 
     useEffect(() => {
 
-      const updateUserStatus = async () => {
-        const now = Date.now();
-        const user = auth.currentUser;
-        if (user && now - lastUpdateRef.current > UPDATE_INTERVAL_MS) {
-          lastUpdateRef.current = now;
-          updateUserData(encodeEmail(user.email || ""), {
-            status: "online",
-            lastActive: new Date(),
-          });
-        }
-      };
+        const updateUserStatus = async () => {
+            const now = Date.now();
+            const user = auth.currentUser;
+            if (user && now - lastUpdateRef.current > UPDATE_INTERVAL_MS) {
+                lastUpdateRef.current = now;
+                updateUserData(encodeEmail(user.email || ""), {
+                    status: "online",
+                    lastActive: new Date(),
+                });
+            }
+        };
 
-    //   const handleBeforeUnload = (e: any) => {
-    //     e.preventDefault();
-    //     setOffline();
-    //     e.returnValue = true;
-    //   };
+        //   const handleBeforeUnload = (e: any) => {
+        //     e.preventDefault();
+        //     setOffline();
+        //     e.returnValue = true;
+        //   };
 
-      const intervalId = setInterval(updateUserStatus, UPDATE_INTERVAL_MS);
-      document.addEventListener('visibilitychange', updateUserStatus);
+        const intervalId = setInterval(updateUserStatus, UPDATE_INTERVAL_MS);
+        document.addEventListener('visibilitychange', updateUserStatus);
+        const handleOpenChat = (event: CustomEvent<string>) => {
+            console.log(event.detail)
+            openChatBox(event.detail);
+        };
+        window.addEventListener(OPEN_CHAT_EVENT, handleOpenChat as EventListener);
 
-      return () => {
-        clearInterval(intervalId);
-        document.removeEventListener('visibilitychange', updateUserStatus);
-      };
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', updateUserStatus);
+            window.removeEventListener(OPEN_CHAT_EVENT, handleOpenChat as EventListener);
+        };
     }, []);
 
     useEffect(() => {
@@ -101,6 +108,7 @@ const ChatboxList: React.FC = () => {
     };
 
     const openChatBox = async (id: string) => {
+        if (id === "") return;
         try {
             const userInfo = await getUserInfoByEmail(id);
             if (userInfo && user?.email) {
@@ -135,7 +143,7 @@ const ChatboxList: React.FC = () => {
     };
 
     return (
-        <div className={`fixed bottom-5 right-5 flex flex-row items-end z-10 ${showChatboxes ? 'open' : ''}`}>
+        <div className={`fixed bottom-5 right-5 flex flex-row items-end z-20 ${showChatboxes ? 'open' : ''}`}>
             <div className="flex flex-row-reverse gap-2 mr-2">
                 {openChatboxes.map((id) => {
                     const u = users.find(a => a.email === id);
@@ -166,7 +174,7 @@ const ChatboxList: React.FC = () => {
                                                 <AvatarImage src={u.avatar} alt={u.fullName} />
                                                 <AvatarFallback>{u.fullName}</AvatarFallback>
                                             </Avatar>
-                                            {moment(u.lastActive).fromNow() === "vài giây trước" && (
+                                            {moment(u.lastActive).fromNow() === "vài giây trước" || moment(u.lastActive).fromNow() === "vài giây tới" && (
                                                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                                             )}
                                         </Button>

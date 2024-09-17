@@ -26,7 +26,7 @@ import {
     Auth,
     User,
     UserCredential,
-    fetchSignInMethodsForEmail
+    fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import moment from 'moment';
 
@@ -329,19 +329,10 @@ export interface LoginData {
 }
 
 export const handleLoginFirebase = async (email: string, password: string, avatar: string, fullName: string): Promise<void> => {
-    console.log(`handleLoginFirebase`);
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        console.log(user);
-        console.log({
-            status: "online",
-            lastActive: new Date(),
-            email: email,
-            avatar: avatar,
-            fullName: fullName,
-        });
-        setUserData(encodeEmail(user.email!), {
+        updateUserData(encodeEmail(user.email!), {
             status: "online",
             lastActive: new Date(),
             email: email,

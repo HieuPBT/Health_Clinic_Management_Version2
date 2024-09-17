@@ -11,26 +11,24 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useUser } from "@/contexts/UserContext"
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
-import { Home, User, Key, Newspaper, Calendar, FileText, Users, Plus } from 'lucide-react'
+import { useContext, useEffect, useState } from 'react'
+import { Home, User, Key, Newspaper, Calendar, FileText, Users, Plus, PhoneCall } from 'lucide-react'
 import ChatboxList from '@/components/ChatboxList'
 
 const Header = () => {
-    const { user, logout } = useUser()
+    const { user, logout, isLoading } = useContext(UserContext) as UserContextType
     const router = useRouter()
     const pathname = usePathname()
-    const [isOpen, setIsOpen] = useState(false)
 
     const handleLogout = () => {
         logout()
-        // router.push('/login')
     }
 
     useEffect(() => {
-        if (!user) {
+        if (!user && !isLoading) {
           router.push('/login');
         }
       }, [user, router]);
@@ -38,6 +36,7 @@ const Header = () => {
     const commonRoutes = [
         { href: '/', label: 'Trang Chủ', icon: Home },
         { href: '/news', label: 'Tin Tức', icon: Newspaper },
+        { href: '/staffs', label: 'Đội ngũ', icon: PhoneCall },
     ]
 
     const roleSpecificRoutes = {
@@ -62,7 +61,7 @@ const Header = () => {
     }
 
     return (
-        <header className="bg-white shadow-md ">
+        <header className="shadow-md ">
             {user &&
                 <ChatboxList />}
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -105,17 +104,15 @@ const Header = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
                                     <DropdownMenuLabel><Link href="/profile">{user.fullName}</Link></DropdownMenuLabel>
+                                    <DropdownMenuItem><Link href="/change-password">Đổi mật khẩu</Link></DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={handleLogout}>Đăng xuất</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
                             <>
-                                <Button asChild variant="ghost">
-                                    <Link href="/login">Đăng nhập</Link>
-                                </Button>
                                 <Button asChild>
-                                    <Link href="/register">Đăng ký</Link>
+                                    <Link href="/login">Đăng nhập</Link>
                                 </Button>
                             </>
                         )}

@@ -90,7 +90,7 @@ export const getTodayPrescriptions = async (req, res) => {
 export const createInvoice = async (req, res) => {
     try {
         const prescriptionId = req.params.id;
-        // const { 
+        // const {
         //     appointmentFee,
         // } = req.body;
 
@@ -117,6 +117,7 @@ export const createInvoice = async (req, res) => {
 
         res.status(201).json(newInvoice);
     } catch (error) {
+        console.log(error);
         res.status(400).json({ message: error.message });
     }
 };

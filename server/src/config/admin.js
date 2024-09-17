@@ -32,7 +32,7 @@ const Components = {
 const adminJs = new AdminJS({
     componentLoader,
     dashboard: {
-        
+
       },
     databases: [],
     rootPath: '/admin',
@@ -54,11 +54,11 @@ const adminJs = new AdminJS({
             resource: User,
             options: {
                 properties: {
-                    // password: {
-                    //     isVisible: {
-                    //         list: false, edit: false, filter: false, show: false,
-                    //     },
-                    // },
+                    password: {
+                        isVisible: {
+                            list: false, edit: false, filter: false, show: false,
+                        },
+                    },
                 },
                 // actions: {
                 //   new: {

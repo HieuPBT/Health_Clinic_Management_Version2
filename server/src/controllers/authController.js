@@ -7,7 +7,7 @@ import { generateAccessToken, generateVerificationToken } from '../utils/tokenGe
 import Patient from '../models/Patient.js'
 import getVerificationTemplate from '../emailTemplates/verificationTemplate.js'
 import generatePassword from '../utils/generatePassword.js'
-import { handleRegisterFirebase } from '../utils/firebase.js'
+import { updatePasswordFirebase } from '../utils/firebase.js'
 
 export const register = async (req, res) => {
     console.log(req.body)
@@ -62,9 +62,6 @@ export const register = async (req, res) => {
         const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify-email/${verificationToken}`;
 
         await sendVerificationEmail(user.email, verificationLink);
-
-
-        await handleRegisterFirebase(user.email, password, fullName, avatarUrl);
         const payload = {
             user: {
                 id: user.id,
@@ -78,6 +75,23 @@ export const register = async (req, res) => {
         console.error(err.message);
         res.status(500).send('Server error');
     }
+};
+
+export const getNewActivateLink = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email: email });
+        if (user) {
+            const verificationToken = generateVerificationToken(user._id);
+
+            const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify-email/${verificationToken}`;
+
+            await sendVerificationEmail(email, verificationLink);
+        }
+        res.status(200).send('Verification email sent')
+    } catch (err) {
+        console.error(err.message);
+    };
 };
 
 export const verifyEmail = async (req, res) => {
@@ -94,9 +108,7 @@ export const verifyEmail = async (req, res) => {
         if (user.isActive) {
             return res.send(getVerificationTemplate(true, 'Your email is already verified. You can now log in to your account.'));
         }
-
-        user.isActive = true;
-        await user.save();
+        await User.updateOne({ _id: user._id }, { isActive: true });
 
         res.send(getVerificationTemplate(true, 'Your email has been successfully verified. You can now log in to your account.'));
     } catch (err) {
@@ -108,7 +120,6 @@ export const verifyEmail = async (req, res) => {
 
 export const login = async (req, res) => {
     const { email, password } = req.body;
-    console.log(email);
 
     try {
         const user = await User.findOne({ email });
@@ -145,8 +156,8 @@ export const getNewPassword = async (req, res) => {
 
     const newPassword = generatePassword();
 
-    user.password = newPassword;
-    await user.save();
+
+    await User.updateOne({ _id: user._id }, { password: newPassword });
 
     try {
         await sendNewpasswordEmail(user.email, user.fullName, newPassword);
@@ -154,6 +165,16 @@ export const getNewPassword = async (req, res) => {
     } catch (error) {
         console.error('Lỗi khi gửi email:', error);
         res.status(500).json({ message: 'Có lỗi xảy ra khi gửi email' });
+    }
+};
+
+export const checkEmail = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        res.json({ available: !user });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
     }
 };
 
@@ -171,8 +192,8 @@ export const changePassword = async (req, res) => {
         return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
     }
 
-    user.password = newPassword;
-    await user.save();
+    await User.updateOne({ _id: user._id }, { password: newPassword });
+    await updatePasswordFirebase(user.email, currentPassword, newPassword);
 
-    res.json({ message: 'Mật khẩu đã được thay đổi thành công' });
+    res.status(200).json({ message: 'Mật khẩu đã được thay đổi thành công' });
 };

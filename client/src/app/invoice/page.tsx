@@ -1,7 +1,7 @@
 'use client'
-import { useUser } from "@/contexts/UserContext"
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 import axiosInstance, { endpoints } from "@/lib/axios";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
 import AppointmentCard from "@/components/AppointmentCard";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import Paginator from "@/components/Pagination";
 // import InvoiceDialog from "@/components/dialog/InvoiceDialog";
 
 export default function Invoice() {
-    const { user } = useUser();
+    const { user } = useContext(UserContext) as UserContextType;
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);

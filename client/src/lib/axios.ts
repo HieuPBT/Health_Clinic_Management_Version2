@@ -11,12 +11,18 @@ export const endpoints = {
   'create-invoice': (prescriptionId: string) => `/prescription/${prescriptionId}/invoice`,
   'my-appointment': '/appointment/',
   'register': '/auth/register/',
+  'activate': '/auth/new-activation-link/',
+  'change-password': '/auth/change-password/',
+  'forgot-password': '/auth/forgot-password/',
+  'check-email': '/auth/check-email/',
   'departments': '/department/',
   'cancel-appointment': (id: any)=>`/appointment/${id}/cancel`,
   'confirm-appointment': (appointmentId: string) =>`/appointment/${appointmentId}/confirm/`,
   'reject-appointment': (appointmentId: string) => `/appointment/${appointmentId}/reject`,
   'create-momo': "/payment/create-momo",
   'create-zalopay': "/payment/create-zalopay",
+  'create-vnpay': "/payment/create-vnpay",
+  'staff': '/user/staff'
 }
 
 const axiosInstance = axios.create({

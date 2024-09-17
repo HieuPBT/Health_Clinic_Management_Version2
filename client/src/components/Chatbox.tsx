@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import moment from 'moment';
-import { useUser } from '@/contexts/UserContext';
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 import { getChatId, getMessages, sendMessage, UserData } from '@/lib/firebase';
 import { X } from 'lucide-react';
 import InputForm from '@/components/InputForm';
@@ -25,7 +25,7 @@ interface ChatboxProps {
 const Chatbox: React.FC<ChatboxProps> = ({ isOpen, toggleChatbox, chattingUser }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const chatId = getChatId(chattingUser.email);
-    const { user } = useUser();
+    const { user } = useContext(UserContext) as UserContextType;
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -101,7 +101,7 @@ const Chatbox: React.FC<ChatboxProps> = ({ isOpen, toggleChatbox, chattingUser }
                             <p className="text-sm font-medium">{chattingUser.fullName}</p>
                             <p className="text-xs text-muted-foreground">
                                 {
-                                    moment(chattingUser.lastActive).fromNow() === "vài giây trước"
+                                    moment(chattingUser.lastActive).fromNow() === "vài giây trước" || moment(chattingUser.lastActive).fromNow() === "vài giây tới"
                                         ? "Đang hoạt động"
                                         : "Truy cập " + moment(chattingUser.lastActive).fromNow()}
                             </p>

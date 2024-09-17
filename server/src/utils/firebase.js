@@ -60,11 +60,24 @@ export const handleRegisterFirebase = async (email, password, fullName, avatar) 
             status: "offline",
             lastActive: new Date(),
             email: email,
-            avatar: avatar,
+            avatar: avatar || "",
             fullName: fullName
         });
     } catch (error) {
         console.error(error);
+        throw error;
+    }
+};
+
+
+export const updatePasswordFirebase = async (email, currentPassword, newPassword) => {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, currentPassword);
+        const user = userCredential.user;
+
+        await updatePassword(user, newPassword);
+    } catch (error) {
+        console.error("Error updating password:", error);
         throw error;
     }
 };
