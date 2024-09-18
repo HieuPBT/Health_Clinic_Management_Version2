@@ -3,8 +3,37 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { CalendarDateRangePicker } from "../date-range-picker/date-range-picker";
 import PatientTable from "./patient-table";
+import { useEffect, useState } from "react";
+import { PatientProfile } from "@/types/patient-profile";
+import axiosInstance, { endpoints } from "@/lib/axios";
+import { Skeleton } from "../ui/skeleton";
+import MySkeleton from "../MySkeleton";
 
 export default function SearchPatient(){
+    const [tableData, setTableData] = useState<PatientProfile[]>([]);
+    const [queryString, setQueryString] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(true);
+
+    const searchQuery = async() =>{
+        const res = await axiosInstance.get(`${endpoints['search-patient-profile']}?search=${queryString}`)
+        setTableData(res.data.results);
+        setLoading(false);
+        
+    }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>{
+      setQueryString(e.target.value);
+    }
+
+    useEffect(() =>{
+      if(queryString !== ""){
+        searchQuery();
+      }
+      else
+        setTableData([]);
+
+    },[queryString])
+
     return(
         <div className="overflow-hidden rounded-[0.5rem] border bg-background shadow p-5">
           <div className="flex flex-row space-x-4 justify-center items-center">
@@ -25,12 +54,16 @@ export default function SearchPatient(){
                   className="pl-8 md:w-[100px] lg:w-[300px]"
                   type="search" 
                   placeholder="Tên bệnh nhân hoặc email"
+                  value={queryString}
+                  onChange={handleChange}
                 />
               </div>
             </div>
           </div>
           <div className="mt-3">
-            <PatientTable />
+            {loading ? <MySkeleton rows={1}/> :
+              <PatientTable data={tableData}/>
+            }
           </div>
         </div>
     )
