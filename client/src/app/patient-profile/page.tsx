@@ -1,11 +1,13 @@
 'use client'
 
+import SearchPatient from "@/components/patient/search-patient"
+
 export default function PatientProfile(){
     
     return(
-        <>
-            <h1>Tìm kiếm</h1>
-        </>
+        <div className="m-3">
+            <SearchPatient/>
+        </div>
     )
 }
 
