@@ -76,10 +76,12 @@ export const getTodayPrescriptions = async (req, res) => {
 
         const result = await prescriptionPaginator(pipeline, options);
 
-        await Prescription.populate(result.results, {path: 'appointment',
+        await Prescription.populate(result.results, {
+            path: 'appointment',
             populate: {
                 path: 'patient department', select: 'name fullName email'
-            }})
+            }
+        })
 
         res.json(result);
     } catch (error) {
@@ -260,6 +262,8 @@ export const getPatientPrescriptions = async (req, res) => {
         });
 
         const options = {
+            page: page || 1,
+            limit: limit || 10,
             page: page  | 1,
             limit: limit | 10,
             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
