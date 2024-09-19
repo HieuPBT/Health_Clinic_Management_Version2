@@ -10,7 +10,7 @@ import Paginator from "@/components/Pagination";
 // import InvoiceDialog from "@/components/dialog/InvoiceDialog";
 
 export default function Invoice() {
-    const { user } = useContext(UserContext) as UserContextType;
+    const { user, isLoading } = useContext(UserContext) as UserContextType;
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
@@ -53,21 +53,13 @@ export default function Invoice() {
         loadPrescriptions(page)
     }
 
-    // if (loading) {
-    //     return (
-    //         <div className="flex items-center space-x-4">
-    //             <Skeleton className="h-12 w-12 rounded-full" />
-    //             <div className="space-y-2">
-    //                 <Skeleton className="h-4 w-[250px]" />
-    //                 <Skeleton className="h-4 w-[200px]" />
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
+    if (!user || user.role !== 'nurse') {
+        router.push('/');
+        return null;
+    }
     return (
         <>
-            <div className="p-4">
+            <div className="container mx-auto p-4">
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {prescriptions.map((p, index) => (
                         <AppointmentCard

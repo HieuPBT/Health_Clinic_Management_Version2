@@ -10,7 +10,7 @@ import Paginator from "@/components/Pagination"
 import { AppointmentInterface } from "@/components/interface/AppointmentInterface"
 
 export default function Appointment() {
-    const { user } = useContext(UserContext) as UserContextType
+    const { user, isLoading } = useContext(UserContext) as UserContextType
     const router = useRouter()
     const [loading, setLoading] = useState(true);
     const [appointments, setAppointments] = useState<AppointmentInterface[]>([]);
@@ -19,6 +19,7 @@ export default function Appointment() {
 
     const loadAppointments = async (currentPg: number) => {
         try {
+            setLoading(true);
             const res = await axiosInstance.get(endpoints['patient-appointments'], {
                 params: {
                     page: currentPg || 0,
@@ -34,9 +35,7 @@ export default function Appointment() {
     }
 
     useEffect(() => {
-        if (!user || user.role === 'patient') {
-            router.push("/");
-        } else {
+        if (user && user.role !== 'patient') {
             loadAppointments(currentPage);
         }
     }, [user, router]);
@@ -51,9 +50,12 @@ export default function Appointment() {
     }
 
 
-
+    if (!user || user.role === 'patient') {
+        router.push('/');
+        return null;
+    }
     return (
-        <div className="p-4">
+        <div className="container mx-auto p-4">
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {appointments.map((appointment) => (
                     <AppointmentCard
@@ -70,14 +72,14 @@ export default function Appointment() {
             </div>
             {appointments.length > 0 ? (
                 <Paginator currentPage={currentPage} totalPages={totalPages} onPageChange={pageChange} />
-            ): (
+            ) : (
                 <div className="flex items-center space-x-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                    </div>
                 </div>
-            </div>
             )
             }
 

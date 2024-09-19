@@ -15,13 +15,14 @@ import { UserContext, UserContextType } from "@/contexts/UserContext"
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useContext, useEffect, useState } from 'react'
-import { Home, User, Key, Newspaper, Calendar, FileText, Users, Plus, PhoneCall } from 'lucide-react'
+import { Home, User, Key, Newspaper, Calendar, FileText, Users, Plus, PhoneCall, Menu, X } from 'lucide-react'
 import ChatboxList from '@/components/ChatboxList'
 
 const Header = () => {
     const { user, logout, isLoading } = useContext(UserContext) as UserContextType
     const router = useRouter()
     const pathname = usePathname()
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     const handleLogout = () => {
         logout()
@@ -31,12 +32,12 @@ const Header = () => {
         if (!user && !isLoading) {
           router.push('/login');
         }
-      }, [user, router]);
+    }, [user, router, isLoading]);
 
     const commonRoutes = [
         { href: '/', label: 'Trang Chủ', icon: Home },
         { href: '/news', label: 'Tin Tức', icon: Newspaper },
-        { href: '/staffs', label: 'Đội ngũ', icon: PhoneCall },
+        { href: '/staffs', label: 'Đội Ngũ', icon: PhoneCall },
     ]
 
     const roleSpecificRoutes = {
@@ -45,8 +46,8 @@ const Header = () => {
             { href: '/invoice', label: 'Thanh Toán', icon: FileText },
         ],
         doctor: [
-            { href: '/appointment', label: 'Lịch hẹn', icon: Calendar },
-            { href: '/patient-profile', label: 'Hồ sơ bệnh án', icon: Users },
+            { href: '/appointment', label: 'Lịch Hẹn', icon: Calendar },
+            { href: '/patient-profile', label: 'Hồ Sơ Bệnh Án', icon: Users },
         ],
         patient: [
             { href: '/create-appointment', label: 'Đặt Lịch Khám', icon: Plus },
@@ -55,15 +56,14 @@ const Header = () => {
     }
 
     const getRoutes = () => {
-        if (!user) return commonRoutes.slice(0, 1) // Only show Home for non-logged in users
+        if (!user) return commonRoutes.slice(0, 1)
         const userRoutes = roleSpecificRoutes[user.role as keyof typeof roleSpecificRoutes] || []
         return [...commonRoutes, ...userRoutes]
     }
 
     return (
-        <header className="shadow-md ">
-            {user &&
-                <ChatboxList />}
+        <header className="shadow-md">
+            {user && <ChatboxList />}
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex-shrink-0 flex items-center">
@@ -76,21 +76,20 @@ const Header = () => {
                                 height={60}
                             />
                         </Link>
-                        <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <nav className="hidden md:ml-6 md:flex md:space-x-8">
                             {getRoutes().map((route) => (
                                 <Link
                                     key={route.href}
                                     href={route.href}
                                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:bg-accent focus:text-accent-foreground inline-flex items-center space-x-1
-                                ${pathname === route.href ? 'bg-accent text-accent-foreground' : 'text-foreground/60'}
-                            `}
+                                    ${pathname === route.href ? 'bg-accent text-accent-foreground' : 'text-foreground/60'}
+                                `}
                                 >
                                     <route.icon className="w-4 h-4" />
                                     <span>{route.label}</span>
                                 </Link>
                             ))}
                         </nav>
-
                     </div>
                     <div className="flex items-center space-x-4">
                         <ModeToggle />
@@ -110,14 +109,39 @@ const Header = () => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <>
-                                <Button asChild>
-                                    <Link href="/login">Đăng nhập</Link>
-                                </Button>
-                            </>
+                            <Button asChild>
+                                <Link href="/login">Đăng nhập</Link>
+                            </Button>
                         )}
+                        <button
+                            className="md:hidden"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        >
+                            {isMobileMenuOpen ? <X /> : <Menu />}
+                        </button>
                     </div>
                 </div>
+                {isMobileMenuOpen && (
+                    <div className="md:hidden">
+                        <div className="px-2 pt-2 pb-3 space-y-1">
+                            {getRoutes().map((route) => (
+                                <Link
+                                    key={route.href}
+                                    href={route.href}
+                                    className={`block px-3 py-2 rounded-md text-base font-medium ${
+                                        pathname === route.href
+                                            ? 'bg-accent text-accent-foreground'
+                                            : 'text-foreground/60'
+                                    }`}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <route.icon className="inline-block w-4 h-4 mr-2" />
+                                    {route.label}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </nav>
         </header>
     )

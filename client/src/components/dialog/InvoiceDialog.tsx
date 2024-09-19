@@ -36,7 +36,7 @@ const invoiceFormSchema = z.object({
 
 type InvoiceFormData = z.infer<typeof invoiceFormSchema>;
 const getIpnUrl = (method: PaymentMethod) => {
-    const baseUrl = "https://2650-2001-ee0-4f80-4e60-4c13-253f-d17f-ac0c.ngrok-free.app/api/payment";
+    const baseUrl = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/payment`;
     switch (method) {
         case PaymentMethod.MOMO:
             return `${baseUrl}/ipn-momo`;
@@ -54,7 +54,7 @@ export const InvoiceDialog: React.FC<InvoiceProps> = ({ isOpen, onOpenChange, on
         defaultValues: {
             amount: 0,
             orderInfo: "",
-            redirectUrl: "http://localhost:3000/invoice",
+            redirectUrl: process.env.NEXT_PUBLIC_FRONTEND_REDIRECT_URL,
             ipnUrl: getIpnUrl(PaymentMethod.MOMO),
             lang: "vi",
             autoCapture: true,

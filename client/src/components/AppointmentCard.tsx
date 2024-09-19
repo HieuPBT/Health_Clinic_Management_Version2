@@ -25,41 +25,74 @@ export interface AppointmentCardProps {
 }
 
 
-const AppointmentCard: React.FC<AppointmentCardProps> = ({ _id, patient, bookingDate, bookingTime, department, status, btn, 
+const AppointmentCard: React.FC<AppointmentCardProps> = ({ _id, patient, bookingDate, bookingTime, department, status, btn,
     onConfirm }) => {
     const formattedDate = format(new Date(bookingDate), "dd/MM/yyyy");
     const [isDialogOpen, setDialogOpen] = useState(false);
-    const {toast} = useToast();
-    const confirmAppointment = async(appointmentId: string) =>{
-        try{
+    const { toast } = useToast();
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportPDF = async (id: string) => {
+        setIsExporting(true);
+        try {
+            const response = await axiosInstance.get(endpoints['export-prescription-pdf'](id), {
+                responseType: 'blob'
+            });
+
+            const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `prescription_${id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            toast({
+                title: "Thành công",
+                description: "Toa thuốc đã được gửi qua email dưới dạng PDF"
+            });
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            toast({
+                variant: "destructive",
+                title: "Lỗi",
+                description: "Không thể xuất PDF"
+            });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+    const confirmAppointment = async (appointmentId: string) => {
+        try {
             const res = await axiosInstance.patch(endpoints['confirm-appointment'](appointmentId));
             toast({
                 title: "Thành công",
                 description: "Xác thực lịch hẹn thành công"
             })
-            if(onConfirm) onConfirm(appointmentId);
-            
-        }catch(error){
+            if (onConfirm) onConfirm(appointmentId);
+
+        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Lỗi",
                 description: "Không thể xác nhận lịch hẹn"
             })
         }
-        
+
         console.log('xac nhan');
     }
 
-    const rejectAppointment = async(appointmentId: string)=>{
-        try{
+    const rejectAppointment = async (appointmentId: string) => {
+        try {
             await axiosInstance.post(endpoints['reject-appointment'](appointmentId));
             toast({
                 title: "Thành công",
                 description: "Từ chối lịch hẹn thành công"
             })
-            if(onConfirm) onConfirm(appointmentId);
+            if (onConfirm) onConfirm(appointmentId);
 
-        } catch(error){
+        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Lỗi",
@@ -100,16 +133,22 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ _id, patient, booking
             </CardContent>
             <CardFooter className='flex justify-between'>
                 {btn.bt1 && (
-                    <Button variant="destructive" onClick={() => rejectAppointment(_id)}>{btn.bt1}</Button>
+                    <Button
+                        variant="destructive"
+                        onClick={() => btn.bt1 === 'Từ Chối' ? rejectAppointment(_id) : handleExportPDF(_id)}
+                        disabled={isExporting}
+                    >
+                        {isExporting ? 'Đang xuất...' : btn.bt1}
+                    </Button>
                 )}
                 {btn.bt2 && (
-                    <Button variant="default" onClick={() => btn.bt2 === 'Xác Nhận'? confirmAppointment(_id): setDialogOpen(true)}>{btn.bt2}</Button>
+                    <Button variant="default" onClick={() => btn.bt2 === 'Xác Nhận' ? confirmAppointment(_id) : setDialogOpen(true)}>{btn.bt2}</Button>
                 )}
             </CardFooter>
-            {btn.bt2 === 'Kê Toa'? (
-                <PrescriptionDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} id={_id} onRemove={onConfirm}/>
-            ):(
-                <InvoiceDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} onRemove={onConfirm} prescriptionId={_id}/>
+            {btn.bt2 === 'Kê Toa' ? (
+                <PrescriptionDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} id={_id} onRemove={onConfirm} />
+            ) : (
+                <InvoiceDialog isOpen={isDialogOpen} onOpenChange={setDialogOpen} onRemove={onConfirm} prescriptionId={_id} />
             )}
         </Card>
     );

@@ -62,23 +62,23 @@ const Chatbox: React.FC<ChatboxProps> = ({ isOpen, toggleChatbox, chattingUser }
 
         if (isCurrentUser) {
             if (!isSameAsPrevious && !isSameAsNext) {
-                return 'rounded-full';
+                return 'rounded-2xl';
             } else if (!isSameAsPrevious && isSameAsNext) {
-                return 'rounded-t-full rounded-bl-full';
+                return 'rounded-t-2xl rounded-bl-2xl rounded-br-sm';
             } else if (isSameAsPrevious && isSameAsNext) {
-                return 'rounded-l-full';
+                return 'rounded-l-2xl rounded-r-sm';
             } else {
-                return 'rounded-b-full rounded-tl-full';
+                return 'rounded-b-2xl rounded-tl-2xl rounded-tr-sm';
             }
         } else {
             if (!isSameAsPrevious && !isSameAsNext) {
-                return 'rounded-full';
+                return 'rounded-2xl';
             } else if (!isSameAsPrevious && isSameAsNext) {
-                return 'rounded-t-full rounded-br-full';
+                return 'rounded-t-2xl rounded-br-2xl rounded-bl-sm';
             } else if (isSameAsPrevious && isSameAsNext) {
-                return 'rounded-r-full';
+                return 'rounded-r-2xl rounded-l-sm';
             } else {
-                return 'rounded-b-full rounded-tr-full';
+                return 'rounded-b-2xl rounded-tr-2xl rounded-tl-sm';
             }
         }
     };
@@ -122,12 +122,12 @@ const Chatbox: React.FC<ChatboxProps> = ({ isOpen, toggleChatbox, chattingUser }
                             return (
                                 <div key={index} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-1`}>
                                     {!isOwnMessage && (
-                                        <Avatar className="w-8 h-8 mr-2">
+                                        <Avatar className="w-8 h-8 mr-2 self-end">
                                             <AvatarImage src={chattingUser.avatar} alt={chattingUser.fullName} />
                                             <AvatarFallback>{chattingUser.fullName.split(" ").slice(-1)}</AvatarFallback>
                                         </Avatar>
                                     )}
-                                    <div className={`px-3 py-1 ${messageClass} ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <div className={`px-3 py-1 max-w-40 ${messageClass} ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                                         {message.message}
                                     </div>
                                 </div>

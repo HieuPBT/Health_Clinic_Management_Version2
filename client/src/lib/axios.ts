@@ -24,16 +24,8 @@ export const endpoints = {
   'create-vnpay': "/payment/create-vnpay",
   'staff': '/user/staff',
   'search-patient-profile': '/prescription/patient-prescriptions',
+  'export-prescription-pdf': (id: string) => `/prescription/${id}/export/`
 }
-
-// export const endpo = {
-//   test :{
-//     limit: '/api'
-//   },
-//   test2: {
-//     limit2: '/api'
-//   }
-// }
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:8888/api',

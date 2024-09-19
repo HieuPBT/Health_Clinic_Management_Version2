@@ -20,8 +20,13 @@ interface Appointment{
     bookingTime: string,
 }
 
+interface Medicine {
+    name: string,
+    unit: string
+}
+
 interface MedicineList{
-    _id: string,
+    medicine: Medicine,
     quantity: number,
     note: string
 }

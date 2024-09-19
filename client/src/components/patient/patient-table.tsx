@@ -9,20 +9,6 @@ import {
     TableHeader,
     TableRow,
 } from "../ui/table";
-import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFacetedRowModel,
-    getFacetedUniqueValues,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from "@tanstack/react-table"
 import { PatientProfile } from "@/types/patient-profile";
 import axiosInstance, { endpoints } from "@/lib/axios";
 import PatientDetail from "./patient-detail";
@@ -47,15 +33,16 @@ export default function PatientTable({ data }: Props) {
         <div className="overflow-x-auto">
             <div>
                 <Table className="rounded-md border">
-                    {/* <TableCaption>test</TableCaption> */}
                     <TableHeader>
                         <TableRow>
                             <TableHead>Id</TableHead>
                             <TableHead>Bệnh nhân</TableHead>
+                            <TableHead>Email</TableHead>
                             <TableHead>Khoa</TableHead>
                             <TableHead>Mô tả</TableHead>
                             <TableHead>Kết luận</TableHead>
                             <TableHead>Ngày khám</TableHead>
+                            <TableHead>Bác sĩ kê toa</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -63,18 +50,20 @@ export default function PatientTable({ data }: Props) {
                             <TableRow key={index} onClick={() => handleOpen(i)}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{i.patient.fullName}</TableCell>
+                                <TableCell>{i.patient.email}</TableCell>
                                 <TableCell>{i.department.name}</TableCell>
                                 <TableCell>{i.description}</TableCell>
                                 <TableCell>{i.conclusion}</TableCell>
-                                <TableCell>{new Date(i.appointment.bookingDate).toLocaleString()}</TableCell>
-                                
+                                <TableCell>{new Date(i.appointment.bookingDate).toLocaleDateString()}</TableCell>
+                                <TableCell>{i.doctor.name}</TableCell>
+
                             </TableRow>
 
                         ))}
                         <PatientDetail open={open} data={selectedData} onOpenChange={handleClose}/>
                     </TableBody>
                 </Table>
-                
+
             </div>
 
         </div>

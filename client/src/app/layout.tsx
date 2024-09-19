@@ -21,24 +21,24 @@ export default function RootLayout({
 }) {
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex flex-col min-h-screen">
-            <UserProvider>
+    <UserProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={inter.className}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex flex-col min-h-screen">
               <Header />
               <main className="flex-grow">{children}</main>
               <Footer />
-            </UserProvider>
-          </div>
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
+            </div>
+            <Toaster />
+          </ThemeProvider>
+        </body>
+      </html>
+    </UserProvider>
   )
 }

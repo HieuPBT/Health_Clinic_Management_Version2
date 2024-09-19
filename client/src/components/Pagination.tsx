@@ -17,7 +17,7 @@ const Paginator: React.FC<PaginatorProps> = ({ currentPage, totalPages, onPageCh
     return (
         <Pagination>
             <PaginationContent>
-                <PaginationItem>
+                <PaginationItem className="cursor-pointer">
                     <PaginationPrevious
                         onClick={(e) => {
                             e.preventDefault();
@@ -25,7 +25,7 @@ const Paginator: React.FC<PaginatorProps> = ({ currentPage, totalPages, onPageCh
                         }}
                     />
                 </PaginationItem>
-                <PaginationItem>
+                <PaginationItem className="cursor-pointer">
                     <PaginationLink
                         isActive
                         onClick={(e) => {
@@ -37,12 +37,12 @@ const Paginator: React.FC<PaginatorProps> = ({ currentPage, totalPages, onPageCh
                     </PaginationLink>
                 </PaginationItem>
                 {totalPages > 2 && currentPage !== totalPages && (
-                    <PaginationItem>
+                    <PaginationItem className="cursor-pointer">
                         <PaginationEllipsis />
                     </PaginationItem>
                 )}
                 {totalPages >= 2 && currentPage !== totalPages &&
-                    <PaginationItem>
+                    <PaginationItem className="cursor-pointer">
                         <PaginationLink onClick={(e) => {
                             e.preventDefault();
                             handlePageChange(totalPages);
@@ -51,7 +51,7 @@ const Paginator: React.FC<PaginatorProps> = ({ currentPage, totalPages, onPageCh
                         </PaginationLink>
                     </PaginationItem>
                 }
-                <PaginationItem>
+                <PaginationItem className="cursor-pointer">
                     <PaginationNext
                         onClick={(e) => {
                             e.preventDefault();

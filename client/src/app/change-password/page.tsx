@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useContext, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/components/ui/use-toast"
 import axiosInstance, { endpoints } from "@/lib/axios"
+import { UserContext, UserContextType } from "@/contexts/UserContext"
 
 export default function ChangePasswordPage() {
+    const { user } = useContext(UserContext) as UserContextType
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [newPasswordConfirm, setNewPasswordConfirm] = useState("")
@@ -51,7 +53,10 @@ export default function ChangePasswordPage() {
         }
     }
 
-
+    if(!user) {
+        router.push('/login')
+        return null
+    }
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Card className="w-[350px]">

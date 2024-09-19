@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import axiosInstance, { endpoints } from '@/lib/axios';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
+import { UserContext, UserContextType } from '@/contexts/UserContext';
 
 type Department = {
   _id: string;
@@ -38,6 +40,8 @@ type ApiResponse = {
 };
 
 const MyAppointments: React.FC = () => {
+  const { user } = useContext(UserContext) as UserContextType;
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [currentStatus, setCurrentStatus] = useState<AppointmentStatus>('TẤT CẢ');
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,12 +50,12 @@ const MyAppointments: React.FC = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
 
-  const {toast} = useToast();
+  const { toast } = useToast();
 
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
-      let params:any = {
+      let params: any = {
         page: currentPage
       }
       if (currentStatus !== 'TẤT CẢ') {
@@ -155,7 +159,14 @@ const MyAppointments: React.FC = () => {
     setCurrentStatus(newStatus);
     setCurrentPage(1);
   };
-
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+  if (user && user.role !== 'patient') {
+    router.push('/');
+    return null;
+  }
   return (
     <div className="container mx-auto p-4">
       <Tabs value={currentStatus} onValueChange={(value) => handleStatusChange(value as AppointmentStatus)}>

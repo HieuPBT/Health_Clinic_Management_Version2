@@ -27,14 +27,14 @@ export default function RegisterPage() {
         address: "",
         healthInsurance: ""
     });
-    const [avatar, setAvatar] = useState(null);
+    const [avatar, setAvatar] = useState<File | null>(null);
     const [isEmailValid, setIsEmailValid] = useState(false);
     const [isEmailAvailable, setIsEmailAvailable] = useState(true);
     const [isCheckingEmail, setIsCheckingEmail] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
 
-    const validateEmail = (email) => {
+    const validateEmail = (email: string) => {
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(String(email).toLowerCase());
     };
@@ -56,11 +56,11 @@ export default function RegisterPage() {
         [isEmailValid]
     );
 
-    const handleGenderChange = (value) => {
+    const handleGenderChange = (value: any) => {
         setFormData(prev => ({ ...prev, gender: value }));
     };
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: any) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
@@ -112,7 +112,7 @@ export default function RegisterPage() {
         const formDataToSend = new FormData();
         Object.keys(formData).forEach(key => {
             if (key !== 'confirmPassword') {
-                formDataToSend.append(key, formData[key]);
+                formDataToSend.append(key, formData[key as keyof typeof formData]);
             }
         });
         if (avatar) {
@@ -323,7 +323,12 @@ export default function RegisterPage() {
                                     <Input
                                         id="avatar"
                                         type="file"
-                                        onChange={(e) => setAvatar(e.target.files[0])}
+                                        onChange={(e) => {
+                                            const files = e.target.files;
+                                            if (files && files.length > 0) {
+                                                setAvatar(files[0]);
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>

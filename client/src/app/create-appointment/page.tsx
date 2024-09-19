@@ -46,8 +46,8 @@ const AppointmentBooking = () => {
     thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
     return thirtyDaysLater;
   });
-  const [date, setDate] = useState(null);
-  const [availableBookingTimes, setAvailableBookingTimes] = useState([]);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [availableBookingTimes, setAvailableBookingTimes] = useState<string[]>([]);
   const { toast } = useToast();
 
   const nextStep = () => setStep(step + 1);
@@ -82,15 +82,14 @@ const AppointmentBooking = () => {
   const loadAllowedBookingTimes = async () => {
     console.log("Loading all bookings")
     try {
-      const res = await axiosInstance.get(`${endpoints['available-booking-times']}?date=${yyyyMdFmt(date)}&department=${department}`)
-      setAvailableBookingTimes(res.data);
+      let res
+      if (date)
+        res = await axiosInstance.get(`${endpoints['available-booking-times']}?date=${yyyyMdFmt(date)}&department=${department}`)
+      if (res && res.data.length > 0)
+        setAvailableBookingTimes(res.data);
     } catch (err) {
       console.error(err);
     }
-  }
-  if(!user && !isLoading){
-    router.push("/login")
-    return null;
   }
 
   useEffect(() => {
@@ -110,18 +109,20 @@ const AppointmentBooking = () => {
 
   const createAppointment = async () => {
     try {
-      const res = await axiosInstance.post(endpoints['create-appointment'], {
-        department: department,
-        bookingDate: yyyyMdFmt(date),
-        bookingTime: time
-      })
-      if (res.status === 201) {
+      let res
+      if (date)
+        res = await axiosInstance.post(endpoints['create-appointment'], {
+          department: department,
+          bookingDate: yyyyMdFmt(date),
+          bookingTime: time
+        })
+      if (res?.status === 201) {
         toast({
           title: 'Thành công!',
           description: 'Đặt lịch thành công! Vui lòng chờ y tá xác nhận lịch hẹn của bạn.'
         })
         setStep(1);
-        setDate(null);
+        setDate(undefined);
         setTime('');
         setDepartment('');
       }
@@ -131,7 +132,7 @@ const AppointmentBooking = () => {
   }
 
 
-  const isTimeDisabled = (time: never) => !availableBookingTimes.includes(time);
+  const isTimeDisabled = (time: string) => !availableBookingTimes.includes(time);
 
   const Legend = () => (
     <div className="flex flex-col space-y-2 mt-4">
@@ -151,6 +152,14 @@ const AppointmentBooking = () => {
     </div>
   );
 
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+  if (user && user.role !== 'patient') {
+    router.push('/');
+    return null;
+  }
   const renderStep = () => {
     switch (step) {
       case 1:

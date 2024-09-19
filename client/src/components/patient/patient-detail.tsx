@@ -27,6 +27,14 @@ export default function PatientDetail({ open, data, onOpenChange} :Props){
                     <Label htmlFor="patientName" className="text-right">Khoa</Label>
                     <Input id="patientName" className="col-span-3" value={data.department.name} readOnly/>
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="patientName" className="text-right">Email</Label>
+                    <Input id="patientName" className="col-span-3" value={data.patient.email} readOnly/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="patientName" className="text-right">Bác sĩ</Label>
+                    <Input id="patientName" className="col-span-3" value={data.doctor.name} readOnly/>
+                </div>
                 <div>
                     <h3 className="text-lg font-semibold mb-2">Danh sách thuốc</h3>
                     <Table>
@@ -40,7 +48,7 @@ export default function PatientDetail({ open, data, onOpenChange} :Props){
                         <TableBody>
                             {data.medicineList.map((m, index) =>(
                                 <TableRow key={index}>
-                                    <TableCell>Tên thuốc</TableCell>
+                                    <TableCell>{m.medicine?.name || ''}</TableCell>
                                     <TableCell>{m.note}</TableCell>
                                     <TableCell>{m.quantity}</TableCell>
                                 </TableRow>
