@@ -11,6 +11,23 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+export const sendPrescriptionEmail = async (email, pdfStream) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Lộc Hiếu Clinic Gửi PDF Toa Thuốc',
+        text: 'Chúng tôi gửi bạn toa thuốc.',
+        attachments: [
+            {
+                filename: 'toa_thuoc.pdf',
+                content: pdfStream
+            }
+        ]
+    };
+
+    await transporter.sendMail(mailOptions);
+};
+
 export const sendVerificationEmail = async (email, verificationLink) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,

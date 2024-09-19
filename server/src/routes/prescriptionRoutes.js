@@ -9,5 +9,6 @@ router.post('/', authenticateToken, authorizeRole(['doctor']), prescriptionContr
 router.get('/today', authenticateToken, authorizeRole(['nurse']), prescriptionController.getTodayPrescriptions);
 router.get('/patient-prescriptions', authenticateToken, authorizeRole(['doctor']), prescriptionController.getPatientPrescriptions);
 router.post('/:id/invoice', authenticateToken, authorizeRole(['nurse']), prescriptionController.createInvoice);
+router.get('/:prescriptionId/export', authenticateToken, authorizeRole(['nurse']), prescriptionController.exportPrescriptionPDF);
 
 export default router;

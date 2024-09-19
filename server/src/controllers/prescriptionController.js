@@ -125,105 +125,59 @@ export const createInvoice = async (req, res) => {
     }
 };
 
-// export const getPatientPrescriptions = async (req, res) => {
-//     try {
-//         const { email, start_date, end_date, page, limit } = req.query;
-
-//         let query = {};
-
-//         if (email) {
-//             const patient = await User.findOne({ email });
-//             console.log(patient);
-//             if (patient) {
-//                 query['appointment.patient'] = patient._id;
-//             }
-//             else console.log('Not found')
-//         }
-
-//         // if (email) {
-//         //     const user = await User.findOne({ email })
-//         //     if (user) {
-//         //         query['appointment.patient'] = user._id;
-//         //     } else {
-//         //         return res.status(404).json({ message: 'Patient not found' });
-//         //     }
-//         // }
-
-//         if (start_date && end_date) {
-//             query.createdAt = {
-//                 $gte: moment(start_date).tz(TIMEZONE).startOf('day').toDate(),
-//                 $lte: moment(end_date).tz(TIMEZONE).endOf('day').toDate()
-//             };
-//         }
-
-//         const options = {
-//             page: req.query.page,
-//             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
-//             sortBy: { 'appointment.bookingDate': -1 },
-//             limit: req.query.limit,
-//             populate: [
-//                 { path: 'appointment', populate: { path: 'patient', select: 'email' } },
-//                 { path: 'doctor', select: 'email' }
-//               ]
-//         }
-
-//         console.log(options);
-
-//         // const prescriptions = await Prescription.find(query).populate('patient');
-//         // res.json(prescriptions);
-//         const result = await prescriptionPaginator(query, options);
-
-//         res.json((result));
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
 export const getPatientPrescriptions = async (req, res) => {
     try {
         const { start_date, end_date, page, limit, search } = req.query;
-        let aggregationPipeline = [];
+        let aggregationPipeline = [
+            {
+                $lookup: {
+                    from: 'appointments',
+                    localField: 'appointment',
+                    foreignField: '_id',
+                    as: 'appointmentDetails'
+                }
+            },
+            { $unwind: '$appointmentDetails' },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'appointmentDetails.patient',
+                    foreignField: '_id',
+                    as: 'patientDetails'
+                }
+            },
+            { $unwind: '$patientDetails' },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'doctor',
+                    foreignField: '_id',
+                    as: 'doctorDetails'
+                }
+            },
+            { $unwind: '$doctorDetails' },
+            {
+                $lookup: {
+                    from: 'departments',
+                    localField: 'appointmentDetails.department',
+                    foreignField: '_id',
+                    as: 'departmentDetails'
+                }
+            },
+            { $unwind: '$departmentDetails' },
+            {
+                $lookup: {
+                    from: 'medicines',
+                    localField: 'medicineList.medicine',
+                    foreignField: '_id',
+                    as: 'medicineDetails'
+                }
+            }
+        ];
 
-        aggregationPipeline.push({
-            $lookup: {
-                from: 'appointments',
-                localField: 'appointment',
-                foreignField: '_id',
-                as: 'appointmentDetails'
-            }
-        });
-        aggregationPipeline.push({ $unwind: '$appointmentDetails' });
-        aggregationPipeline.push({
-            $lookup: {
-                from: 'users',
-                localField: 'appointmentDetails.patient',
-                foreignField: '_id',
-                as: 'patientDetails'
-            }
-        });
-        aggregationPipeline.push({ $unwind: '$patientDetails' });
-        aggregationPipeline.push({
-            $lookup: {
-                from: 'users',
-                localField: 'doctor',
-                foreignField: '_id',
-                as: 'doctorDetails'
-            }
-        });
-        aggregationPipeline.push({ $unwind: '$doctorDetails' });
-        aggregationPipeline.push({
-            $lookup: {
-                from: 'departments',
-                localField: 'appointmentDetails.department',
-                foreignField: '_id',
-                as: 'departmentDetails'
-            }
-        });
-        aggregationPipeline.push({ $unwind: '$departmentDetails' });
         let matchStage = {};
         if (start_date && end_date) {
-            matchStage['createdAt'] = {
+            matchStage['appointmentDetails.bookingDate'] = {
                 $gte: moment(start_date).tz(TIMEZONE).startOf('day').toDate(),
                 $lte: moment(end_date).tz(TIMEZONE).endOf('day').toDate()
             };
@@ -237,25 +191,51 @@ export const getPatientPrescriptions = async (req, res) => {
         if (Object.keys(matchStage).length > 0) {
             aggregationPipeline.push({ $match: matchStage });
         }
+
         aggregationPipeline.push({
             $project: {
-                id: 1, medicineList: 1, description: 1, conclusion: 1, createdAt: 1, updatedAt: 1,
+                id: 1,
+                medicineList: {
+                    $map: {
+                        input: '$medicineList',
+                        as: 'medicine',
+                        in: {
+                            medicine: {
+                                $arrayElemAt: [
+                                    {
+                                        $filter: {
+                                            input: '$medicineDetails',
+                                            cond: { $eq: ['$$this._id', '$$medicine.medicine'] }
+                                        }
+                                    },
+                                    0
+                                ]
+                            },
+                            note: '$$medicine.note',
+                            quantity: '$$medicine.quantity'
+                        }
+                    }
+                },
+                description: 1,
+                conclusion: 1,
+                createdAt: 1,
+                updatedAt: 1,
                 patient: {
-                    _id: '$patientDetails._id',
+                    id: '$patientDetails._id',
                     email: '$patientDetails.email',
                     fullName: '$patientDetails.fullName'
                 },
                 appointment: {
-                    _id: '$appointmentDetails._id',
+                    id: '$appointmentDetails._id',
                     bookingDate: '$appointmentDetails.bookingDate',
                     bookingTime: '$appointmentDetails.bookingTime'
                 },
                 doctor: {
-                    _id: '$doctorDetails._id',
+                    id: '$doctorDetails._id',
                     name: '$doctorDetails.fullName'
                 },
                 department: {
-                    _id: '$departmentDetails._id',
+                    id: '$departmentDetails._id',
                     name: '$departmentDetails.name'
                 }
             }
@@ -264,8 +244,6 @@ export const getPatientPrescriptions = async (req, res) => {
         const options = {
             page: page || 1,
             limit: limit || 10,
-            page: page  | 1,
-            limit: limit | 10,
             baseUrl: `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}`,
             sortBy: { 'appointment.bookingDate': -1 }
         };
@@ -276,4 +254,70 @@ export const getPatientPrescriptions = async (req, res) => {
         console.error(error);
         res.status(500).json({ message: error.message });
     }
+};
+
+import PDFDocument from 'pdfkit';
+import { Readable } from 'stream';
+import { sendPrescriptionEmail } from '../utils/email.js';
+
+export const exportPrescriptionPDF = async (req, res) => {
+  try {
+    const { prescriptionId } = req.params;
+
+    // Fetch prescription data
+    const prescription = await Prescription.findById(prescriptionId)
+      .populate('doctor', 'fullName')
+      .populate('appointment')
+      .populate('medicineList.medicine');
+
+    if (!prescription) {
+      return res.status(404).json({ message: 'Prescription not found' });
+    }
+
+    // Fetch appointment data
+    const appointment = await Appointment.findById(prescription.appointment)
+      .populate('patient', 'fullName email')
+      .populate('department', 'name');
+
+    // Generate PDF
+    const doc = new PDFDocument();
+    const chunks = [];
+
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', async () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      const pdfStream = new Readable();
+      pdfStream.push(pdfBuffer);
+      pdfStream.push(null);
+
+      // Send email with PDF attachment
+      await sendPrescriptionEmail(appointment.patient.email, pdfStream);
+
+      // Send PDF to frontend
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=prescription_${prescriptionId}.pdf`);
+      res.send(pdfBuffer);
+    });
+
+    // Generate PDF content
+    doc.fontSize(18).text('Prescription', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Doctor: ${prescription.doctor.fullName}`);
+    doc.text(`Patient: ${appointment.patient.fullName}`);
+    doc.text(`Department: ${appointment.department.name}`);
+    doc.text(`Date: ${appointment.bookingDate.toLocaleDateString()}`);
+    doc.moveDown();
+    doc.text('Medicines:');
+    // prescription.medicineList.forEach((item) => {
+    //   doc.text(`- ${item.medicine.name}: ${item.quantity} ${item.medicine.unit} (${item.note})`);
+    // });
+    doc.moveDown();
+    doc.text(`Description: ${prescription.description}`);
+    doc.text(`Conclusion: ${prescription.conclusion}`);
+
+    doc.end();
+  } catch (error) {
+    console.error('Error exporting prescription PDF:', error);
+    res.status(500).json({ message: 'Error exporting prescription PDF' });
+  }
 };
